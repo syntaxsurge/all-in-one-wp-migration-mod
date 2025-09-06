@@ -1,11 +1,12 @@
 <?php
 /**
- * Plugin Name: All-in-One WP Migration
- * Plugin URI: https://servmask.com/
+ * Plugin Name: All-in-One WP Migration (Modded)
+ * Plugin URI: https://example.invalid/
  * Description: Migration tool for all your blog data. Import or Export your blog content with a single click.
- * Author: ServMask
- * Author URI: https://servmask.com/
- * Version: 6.77
+ * Author: ServMask (Modified)
+ * Author URI: https://example.invalid/
+ * Version: 99.0
+ * Update URI: false
  * Text Domain: all-in-one-wp-migration
  * Domain Path: /languages
  * Network: True
