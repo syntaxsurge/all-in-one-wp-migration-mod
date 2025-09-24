@@ -801,6 +801,7 @@ class Ai1wm_Main_Controller {
 			. 'body .ai1wm-backup-actions .ai1wm-button-icon:last-child { margin-right:0; }'
 			. 'body .ai1wm-backups-logs .ai1wm-button-icon { min-width:36px; height:36px; margin-right:0; }'
 			. 'body .ai1wm-backup-log-content { margin:0; max-height:260px; overflow:auto; background:#f8f9f9; border-radius:6px; padding:16px; font-size:13px; line-height:1.5; }'
+			. 'body .ai1wm-backup-status { display:none !important; }'
 			. 'body #ai1wm-s3-settings .ai1wm-message { margin-top:0; }';
 
 		wp_add_inline_style( 'ai1wm_backups', $custom_css );
@@ -900,7 +901,8 @@ class Ai1wm_Main_Controller {
 				'copy_blocked_active' => __( 'An upload is already %s for this backup. Please wait for it to finish before copying again.', AI1WM_PLUGIN_NAME ),
 				'confirm_replace' => __( 'A remote copy already exists (%s). Replace it? This will delete the existing remote backup before uploading again.', AI1WM_PLUGIN_NAME ),
 				'replace_cancelled' => __( 'Upload cancelled.', AI1WM_PLUGIN_NAME ),
-				'replacing'      => __( 'Preparing to replace the existing remote backup...', AI1WM_PLUGIN_NAME ),
+				'replacing'      => __( 'Replacing remote backup...', AI1WM_PLUGIN_NAME ),
+				'replace_message' => __( 'The existing remote backup (%s) will be deleted before uploading a fresh copy.', AI1WM_PLUGIN_NAME ),
 				'col_backup'     => __( 'Backup', AI1WM_PLUGIN_NAME ),
 				'col_destination'=> __( 'Destination', AI1WM_PLUGIN_NAME ),
 				'col_status'     => __( 'Status', AI1WM_PLUGIN_NAME ),

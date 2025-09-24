@@ -113,7 +113,7 @@
 								<i class="ai1wm-icon-close"></i>
 								<span><?php _e( 'Delete', AI1WM_PLUGIN_NAME ); ?></span>
 							</a>
-							<div class="ai1wm-backup-status ai1wm-hide" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" data-filename="<?php echo esc_attr( basename( $backup['filename'] ) ); ?>" data-state="<?php echo esc_attr( $archive_state ); ?>" data-remote="<?php echo esc_attr( $archive_remote ); ?>" data-updated="<?php echo esc_attr( $archive_updated ); ?>" data-log="<?php echo esc_attr( $archive_payload ); ?>" data-message="<?php echo esc_attr( $archive_message ); ?>" aria-live="polite"></div>
+							<div class="ai1wm-backup-status ai1wm-hide" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" data-filename="<?php echo esc_attr( basename( $backup['filename'] ) ); ?>" data-state="<?php echo esc_attr( $archive_state ); ?>" data-remote="<?php echo esc_attr( $archive_remote ); ?>" data-updated="<?php echo esc_attr( $archive_updated ); ?>" data-log="<?php echo esc_attr( $archive_payload ); ?>" data-message="<?php echo esc_attr( $archive_message ); ?>" aria-live="polite" style="display:none;"></div>
 						</td>
 					</tr>
 									<?php endforeach; ?>
