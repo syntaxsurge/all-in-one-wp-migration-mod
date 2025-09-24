@@ -809,6 +809,11 @@ class Ai1wm_Main_Controller {
 			. 'body .ai1wm-secret-toggle:focus { outline:2px solid #2271b1; outline-offset:2px; }'
 			. 'body .ai1wm-secret-toggle[data-visible="true"] .dashicons { color:#2271b1; }'
 			. 'body .ai1wm-backup-log-content a { color:#2271b1; text-decoration:underline; display:inline-block; margin-top:8px; }'
+			. 'body .ai1wm-s3-config-actions { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }'
+			. 'body .ai1wm-s3-config-input { width:100%; resize:vertical; min-height:72px; font-family:Menlo,Monaco,monospace; font-size:12px; padding:10px; }'
+			. 'body .ai1wm-s3-config-feedback { margin:6px 0 0; font-size:12px; color:#2271b1; }'
+			. 'body .ai1wm-s3-config-feedback.ai1wm-error { color:#d63638; }'
+			. 'body .ai1wm-s3-config-feedback.ai1wm-success { color:#1a7f37; }'
 			. 'body #ai1wm-s3-settings .ai1wm-message { margin-top:0; }';
 
 		wp_add_inline_style( 'ai1wm_backups', $custom_css );
@@ -824,7 +829,7 @@ class Ai1wm_Main_Controller {
 			'ai1wm_backups_s3',
 			Ai1wm_Template::asset_link( 'javascript/backups-s3.js' ),
 			array( 'ai1wm_backups', 'jquery', 'ai1wm_bootstrap4' ),
-			AI1WM_VERSION,
+			AI1WM_VERSION . '-s3-config-1',
 			true
 		);
 
@@ -913,6 +918,11 @@ class Ai1wm_Main_Controller {
 				'show_secret'    => __( 'Show secret access key', AI1WM_PLUGIN_NAME ),
 				'hide_secret'    => __( 'Hide secret access key', AI1WM_PLUGIN_NAME ),
 				'remote_url_text'=> __( 'Open remote backup (%s)', AI1WM_PLUGIN_NAME ),
+				'config_export_success' => __( 'Configuration copied to clipboard.', AI1WM_PLUGIN_NAME ),
+				'config_export_error'   => __( 'Unable to copy configuration. Please copy manually.', AI1WM_PLUGIN_NAME ),
+				'config_import_success' => __( 'Configuration applied. Review and save to persist.', AI1WM_PLUGIN_NAME ),
+				'config_import_error'   => __( 'Paste configuration JSON before applying.', AI1WM_PLUGIN_NAME ),
+				'config_import_invalid' => __( 'Configuration format is invalid. Please check the JSON.', AI1WM_PLUGIN_NAME ),
 				'col_backup'     => __( 'Backup', AI1WM_PLUGIN_NAME ),
 				'col_destination'=> __( 'Destination', AI1WM_PLUGIN_NAME ),
 				'col_status'     => __( 'Status', AI1WM_PLUGIN_NAME ),
