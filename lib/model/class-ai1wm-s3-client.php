@@ -560,10 +560,9 @@ class Ai1wm_S3_Client {
 				foreach ( $value as $item ) {
 					$query[] = $name . '=' . rawurlencode( (string) $item );
 				}
-			} elseif ( $value === '' ) {
-				$query[] = $name;
 			} else {
-				$query[] = $name . '=' . rawurlencode( (string) $value );
+				$value = (string) $value;
+				$query[] = $name . '=' . rawurlencode( $value );
 			}
 		}
 

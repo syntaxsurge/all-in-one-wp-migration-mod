@@ -34,6 +34,7 @@ $ai1wm_s3_missing = Ai1wm_S3_Settings::missing_required_fields();
 		<div class="ai1wm-field">
 			<label for="ai1wm-s3-endpoint"><?php echo esc_html( $ai1wm_s3_labels['endpoint'] ); ?></label>
 			<input type="text" id="ai1wm-s3-endpoint" name="ai1wm_s3_endpoint" value="<?php echo esc_attr( $ai1wm_s3_settings['endpoint'] ); ?>" placeholder="https://s3.us-east-1.amazonaws.com" required data-s3-required="1" data-label="<?php echo esc_attr( $ai1wm_s3_labels['endpoint'] ); ?>" />
+			<p class="description"><?php _e( 'Must start with https:// (secure endpoints only).', AI1WM_PLUGIN_NAME ); ?></p>
 		</div>
 
 		<div class="ai1wm-field">
