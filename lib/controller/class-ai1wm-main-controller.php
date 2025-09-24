@@ -808,6 +808,7 @@ class Ai1wm_Main_Controller {
 			. 'body .ai1wm-secret-toggle .dashicons { font-size:18px; width:auto; height:auto; line-height:1; }'
 			. 'body .ai1wm-secret-toggle:focus { outline:2px solid #2271b1; outline-offset:2px; }'
 			. 'body .ai1wm-secret-toggle[data-visible="true"] .dashicons { color:#2271b1; }'
+			. 'body .ai1wm-backup-log-content a { color:#2271b1; text-decoration:underline; display:inline-block; margin-top:8px; }'
 			. 'body #ai1wm-s3-settings .ai1wm-message { margin-top:0; }';
 
 		wp_add_inline_style( 'ai1wm_backups', $custom_css );
@@ -911,6 +912,7 @@ class Ai1wm_Main_Controller {
 				'replace_message' => __( 'The existing remote backup (%s) will be deleted before uploading a fresh copy.', AI1WM_PLUGIN_NAME ),
 				'show_secret'    => __( 'Show secret access key', AI1WM_PLUGIN_NAME ),
 				'hide_secret'    => __( 'Hide secret access key', AI1WM_PLUGIN_NAME ),
+				'remote_url_text'=> __( 'Open remote backup (%s)', AI1WM_PLUGIN_NAME ),
 				'col_backup'     => __( 'Backup', AI1WM_PLUGIN_NAME ),
 				'col_destination'=> __( 'Destination', AI1WM_PLUGIN_NAME ),
 				'col_status'     => __( 'Status', AI1WM_PLUGIN_NAME ),

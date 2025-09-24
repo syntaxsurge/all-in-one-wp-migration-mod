@@ -12,7 +12,24 @@ class Ai1wm_S3_Status {
 	public static function all() {
 		$stored = get_option( AI1WM_S3_STATUS_OPTION, array() );
 
-		return is_array( $stored ) ? $stored : array();
+		if ( ! is_array( $stored ) ) {
+			return array();
+		}
+
+		$dirty = false;
+		foreach ( $stored as $archive => $status ) {
+			$normalized = self::prepare_status( $archive, $status );
+			if ( $normalized !== $status ) {
+				$stored[ $archive ] = $normalized;
+				$dirty = true;
+			}
+		}
+
+		if ( $dirty ) {
+			update_option( AI1WM_S3_STATUS_OPTION, $stored, false );
+		}
+
+		return $stored;
 	}
 
 	/**
@@ -26,15 +43,10 @@ class Ai1wm_S3_Status {
 		$statuses = self::all();
 
 		if ( isset( $statuses[ $archive ] ) ) {
-			return $statuses[ $archive ];
+			return self::prepare_status( $archive, $statuses[ $archive ] );
 		}
 
-		return array(
-			'state'      => '',
-			'message'    => '',
-			'remote_key' => '',
-			'updated_at' => 0,
-		);
+		return self::defaults();
 	}
 
 	/**
@@ -45,16 +57,24 @@ class Ai1wm_S3_Status {
 	 * @param string $message    Human readable message.
 	 * @param string $remote_key Remote object key.
 	 */
-	public static function update( $archive, $state, $message = '', $remote_key = null ) {
+	public static function update( $archive, $state, $message = '', $remote_key = null, $remote_url = null ) {
 		$archive = self::normalize_archive( $archive );
 		$statuses = self::all();
 
-		$current = isset( $statuses[ $archive ] ) ? $statuses[ $archive ] : array();
+		$current = isset( $statuses[ $archive ] ) ? self::prepare_status( $archive, $statuses[ $archive ] ) : self::defaults();
+		$remote_key = is_null( $remote_key ) ? self::array_get( $current, 'remote_key' ) : $remote_key;
+
+		if ( is_null( $remote_url ) ) {
+			$existing_url = self::array_get( $current, 'remote_url' );
+			$remote_url   = $remote_key ? Ai1wm_S3_Settings::object_url( $remote_key ) : $existing_url;
+		}
+		$remote_url = (string) $remote_url;
 
 		$statuses[ $archive ] = array(
 			'state'      => $state,
 			'message'    => $message,
-			'remote_key' => is_null( $remote_key ) ? self::array_get( $current, 'remote_key' ) : $remote_key,
+			'remote_key' => $remote_key,
+			'remote_url' => $remote_url,
 			'updated_at' => time(),
 		);
 
@@ -86,6 +106,46 @@ class Ai1wm_S3_Status {
 	 */
 	private static function array_get( $data, $key ) {
 		return isset( $data[ $key ] ) ? $data[ $key ] : '';
+}
+
+	/**
+	 * Ensure status entry has expected shape and computed values.
+	 *
+	 * @param  string $archive Archive key.
+	 * @param  array  $status  Stored status.
+	 * @return array
+	 */
+	private static function prepare_status( $archive, $status ) {
+		if ( ! is_array( $status ) ) {
+			$status = array();
+		}
+
+		$status = array_merge( self::defaults(), $status );
+
+		if ( $status['remote_url'] === '' && $status['remote_key'] !== '' ) {
+			$status['remote_url'] = Ai1wm_S3_Settings::object_url( $status['remote_key'] );
+		}
+
+		$status['remote_key'] = (string) $status['remote_key'];
+		$status['remote_url'] = (string) $status['remote_url'];
+		$status['message']    = (string) $status['message'];
+
+		return $status;
+	}
+
+	/**
+	 * Default structure for status entries.
+	 *
+	 * @return array
+	 */
+	private static function defaults() {
+		return array(
+			'state'      => '',
+			'message'    => '',
+			'remote_key' => '',
+			'remote_url' => '',
+			'updated_at' => 0,
+		);
 	}
 
 	/**

@@ -107,6 +107,51 @@ class Ai1wm_S3_Settings {
 	}
 
 	/**
+	 * Build a direct object URL for the given remote key.
+	 *
+	 * @param  string $remote_key Remote object key relative to bucket.
+	 * @param  array  $settings   Optional settings array to reuse.
+	 * @return string
+	 */
+	public static function object_url( $remote_key, $settings = null ) {
+		$remote_key = ltrim( str_replace( '\\', '/', (string) $remote_key ), '/' );
+		if ( $remote_key === '' ) {
+			return '';
+		}
+
+		if ( is_null( $settings ) ) {
+			$settings = self::get();
+		}
+
+		$endpoint = isset( $settings['endpoint'] ) ? trim( (string) $settings['endpoint'] ) : '';
+		$bucket   = isset( $settings['bucket'] ) ? trim( (string) $settings['bucket'] ) : '';
+		if ( $endpoint === '' || $bucket === '' ) {
+			return '';
+		}
+
+		$encoded_key = implode( '/', array_map( 'rawurlencode', explode( '/', $remote_key ) ) );
+		$use_path    = ! empty( $settings['use_path_style'] );
+
+		$parts = wp_parse_url( $endpoint );
+		$scheme = isset( $parts['scheme'] ) ? $parts['scheme'] : 'https';
+		$host   = isset( $parts['host'] ) ? $parts['host'] : '';
+		$port   = isset( $parts['port'] ) ? ':' . (int) $parts['port'] : '';
+		$path   = isset( $parts['path'] ) ? rtrim( $parts['path'], '/' ) : '';
+
+		if ( $use_path || $host === '' ) {
+			$base = $host === '' ? untrailingslashit( $endpoint ) : untrailingslashit( $scheme . '://' . $host . $port . $path );
+			return $base . '/' . rawurlencode( $bucket ) . '/' . $encoded_key;
+		}
+
+		$base = $scheme . '://' . $bucket . '.' . $host . $port;
+		if ( $path ) {
+			$base .= $path;
+		}
+
+		return untrailingslashit( $base ) . '/' . $encoded_key;
+	}
+
+	/**
 	 * Access array value with graceful fallback.
 	 *
 	 * @param  array  $array Input array.

@@ -10,8 +10,10 @@ class Ai1wm_S3_Uploader {
 	 * @param  string $archive Relative archive path.
 	 * @throws Ai1wm_S3_Exception When configuration or archive is invalid.
 	 */
-	public static function dispatch( $archive ) {
+	public static function dispatch( $archive, $args = array() ) {
 		$archive = self::normalize_archive( $archive );
+		$args    = is_array( $args ) ? $args : array();
+		$force_replace = ! empty( $args['force_replace'] );
 
 		if ( validate_file( $archive ) !== 0 ) {
 			throw new Ai1wm_S3_Exception( __( 'Invalid backup archive path.', AI1WM_PLUGIN_NAME ) );
@@ -27,13 +29,21 @@ class Ai1wm_S3_Uploader {
 			);
 		}
 
-		$remote_key = self::build_remote_key( $archive );
+		$settings   = Ai1wm_S3_Settings::get();
+		$remote_key = self::build_remote_key( $archive, $settings );
+		$remote_url = Ai1wm_S3_Settings::object_url( $remote_key, $settings );
+		$message    = sprintf( __( 'Upload scheduled for %s.', AI1WM_PLUGIN_NAME ), $remote_key );
+
+		if ( $force_replace ) {
+			$message = sprintf( __( 'Replacing remote backup at %s. Upload scheduled.', AI1WM_PLUGIN_NAME ), $remote_key );
+		}
 
 		Ai1wm_S3_Status::update(
 			$archive,
 			'queued',
-			sprintf( __( 'Upload scheduled for %s.', AI1WM_PLUGIN_NAME ), $remote_key ),
-			$remote_key
+			$message,
+			$remote_key,
+			$remote_url
 		);
 
 		if ( ! wp_next_scheduled( AI1WM_S3_CRON_HOOK, array( $archive ) ) ) {
@@ -126,13 +136,15 @@ class Ai1wm_S3_Uploader {
 
 		$settings   = Ai1wm_S3_Settings::get();
 		$remote_key = self::build_remote_key( $archive, $settings );
+		$remote_url = Ai1wm_S3_Settings::object_url( $remote_key, $settings );
 
 		try {
 			Ai1wm_S3_Status::update(
 				$archive,
 				'in_progress',
 				sprintf( __( 'Uploading %s to S3...', AI1WM_PLUGIN_NAME ), $remote_key ),
-				$remote_key
+				$remote_key,
+				$remote_url
 			);
 
 			$client = new Ai1wm_S3_Client( $settings );
@@ -142,14 +154,16 @@ class Ai1wm_S3_Uploader {
 				$archive,
 				'success',
 				sprintf( __( 'Upload to %s completed successfully.', AI1WM_PLUGIN_NAME ), $remote_key ),
-				$remote_key
+				$remote_key,
+				$remote_url
 			);
 		} catch ( Exception $e ) {
 			Ai1wm_S3_Status::update(
 				$archive,
 				'failed',
 				sprintf( __( 'Upload to %1$s failed: %2$s', AI1WM_PLUGIN_NAME ), $remote_key, $e->getMessage() ),
-				$remote_key
+				$remote_key,
+				$remote_url
 			);
 		}
 	}
