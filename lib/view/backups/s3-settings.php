@@ -3,7 +3,24 @@ $ai1wm_s3_labels   = Ai1wm_S3_Settings::field_labels();
 $ai1wm_s3_configured_attr = $s3_configured ? '1' : '0';
 $ai1wm_s3_missing = Ai1wm_S3_Settings::missing_required_fields();
 ?>
+
 <div class="ai1wm-field-set ai1wm-backups-s3" id="ai1wm-s3-settings" data-configured="<?php echo esc_attr( $ai1wm_s3_configured_attr ); ?>">
+	<div class="ai1wm-field ai1wm-s3-config-tools">
+		<label for="ai1wm-s3-config-import-input"><?php _e( 'Import / Export', AI1WM_PLUGIN_NAME ); ?></label>
+		<div class="ai1wm-s3-config-actions">
+			<button type="button" class="ai1wm-button-gray ai1wm-s3-config-export" id="ai1wm-s3-config-export">
+				<i class="ai1wm-icon-export"></i>
+				<?php _e( 'Copy configuration', AI1WM_PLUGIN_NAME ); ?>
+			</button>
+			<button type="button" class="ai1wm-button-gray ai1wm-s3-config-import" id="ai1wm-s3-config-import-btn">
+				<i class="ai1wm-icon-import"></i>
+				<?php _e( 'Apply configuration', AI1WM_PLUGIN_NAME ); ?>
+			</button>
+		</div>
+		<textarea id="ai1wm-s3-config-import-input" class="ai1wm-s3-config-input" rows="3" placeholder="<?php esc_attr_e( 'Paste configuration JSON here and click “Apply configuration”.', AI1WM_PLUGIN_NAME ); ?>"></textarea>
+		<p class="ai1wm-s3-config-feedback" aria-live="polite"></p>
+	</div>
+
 	<div class="ai1wm-backups-s3__heading">
 		<h2>
 			<i class="ai1wm-icon-cloud-upload"></i>
@@ -65,22 +82,6 @@ $ai1wm_s3_missing = Ai1wm_S3_Settings::missing_required_fields();
 					<span class="dashicons dashicons-visibility"></span>
 				</button>
 			</div>
-		</div>
-
-		<div class="ai1wm-field ai1wm-s3-config-tools">
-			<label for="ai1wm-s3-config-import"><?php _e( 'Import / Export', AI1WM_PLUGIN_NAME ); ?></label>
-			<div class="ai1wm-s3-config-actions">
-				<button type="button" class="ai1wm-button-gray ai1wm-s3-config-export" id="ai1wm-s3-config-export">
-					<i class="ai1wm-icon-export"></i>
-					<?php _e( 'Copy configuration', AI1WM_PLUGIN_NAME ); ?>
-				</button>
-				<button type="button" class="ai1wm-button-gray ai1wm-s3-config-import" id="ai1wm-s3-config-import-btn">
-					<i class="ai1wm-icon-import"></i>
-					<?php _e( 'Apply configuration', AI1WM_PLUGIN_NAME ); ?>
-				</button>
-			</div>
-			<textarea id="ai1wm-s3-config-import-input" class="ai1wm-s3-config-input" rows="3" placeholder="<?php esc_attr_e( 'Paste configuration JSON here and click “Apply configuration”.', AI1WM_PLUGIN_NAME ); ?>"></textarea>
-			<p class="ai1wm-s3-config-feedback" aria-live="polite"></p>
 		</div>
 
 		<div class="ai1wm-field ai1wm-s3-checkbox">
