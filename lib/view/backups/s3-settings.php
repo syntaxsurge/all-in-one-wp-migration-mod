@@ -59,7 +59,12 @@ $ai1wm_s3_missing = Ai1wm_S3_Settings::missing_required_fields();
 
 		<div class="ai1wm-field">
 			<label for="ai1wm-s3-secret-key"><?php echo esc_html( $ai1wm_s3_labels['secret_key'] ); ?></label>
-			<input type="password" id="ai1wm-s3-secret-key" name="ai1wm_s3_secret_key" value="<?php echo esc_attr( $ai1wm_s3_settings['secret_key'] ); ?>" autocomplete="off" required data-s3-required="1" data-label="<?php echo esc_attr( $ai1wm_s3_labels['secret_key'] ); ?>" />
+			<div class="ai1wm-secret-input">
+				<input type="password" id="ai1wm-s3-secret-key" name="ai1wm_s3_secret_key" value="<?php echo esc_attr( $ai1wm_s3_settings['secret_key'] ); ?>" autocomplete="off" required data-s3-required="1" data-label="<?php echo esc_attr( $ai1wm_s3_labels['secret_key'] ); ?>" />
+				<button type="button" class="ai1wm-secret-toggle" aria-label="<?php esc_attr_e( 'Show secret access key', AI1WM_PLUGIN_NAME ); ?>" data-toggle="visibility">
+					<span class="dashicons dashicons-visibility"></span>
+				</button>
+			</div>
 		</div>
 
 		<div class="ai1wm-field ai1wm-s3-checkbox">

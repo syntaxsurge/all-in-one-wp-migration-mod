@@ -802,6 +802,12 @@ class Ai1wm_Main_Controller {
 			. 'body .ai1wm-backups-logs .ai1wm-button-icon { min-width:36px; height:36px; margin-right:0; }'
 			. 'body .ai1wm-backup-log-content { margin:0; max-height:260px; overflow:auto; background:#f8f9f9; border-radius:6px; padding:16px; font-size:13px; line-height:1.5; }'
 			. 'body .ai1wm-backup-status { display:none !important; }'
+			. 'body .ai1wm-secret-input { position:relative; display:flex; align-items:center; }'
+			. 'body .ai1wm-secret-input input { flex:1 1 auto; padding-right:44px; }'
+			. 'body .ai1wm-secret-toggle { position:absolute; right:10px; background:transparent; border:0; padding:4px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; color:#4c4c4c; }'
+			. 'body .ai1wm-secret-toggle .dashicons { font-size:18px; width:auto; height:auto; line-height:1; }'
+			. 'body .ai1wm-secret-toggle:focus { outline:2px solid #2271b1; outline-offset:2px; }'
+			. 'body .ai1wm-secret-toggle[data-visible="true"] .dashicons { color:#2271b1; }'
 			. 'body #ai1wm-s3-settings .ai1wm-message { margin-top:0; }';
 
 		wp_add_inline_style( 'ai1wm_backups', $custom_css );
@@ -903,6 +909,8 @@ class Ai1wm_Main_Controller {
 				'replace_cancelled' => __( 'Upload cancelled.', AI1WM_PLUGIN_NAME ),
 				'replacing'      => __( 'Replacing remote backup...', AI1WM_PLUGIN_NAME ),
 				'replace_message' => __( 'The existing remote backup (%s) will be deleted before uploading a fresh copy.', AI1WM_PLUGIN_NAME ),
+				'show_secret'    => __( 'Show secret access key', AI1WM_PLUGIN_NAME ),
+				'hide_secret'    => __( 'Hide secret access key', AI1WM_PLUGIN_NAME ),
 				'col_backup'     => __( 'Backup', AI1WM_PLUGIN_NAME ),
 				'col_destination'=> __( 'Destination', AI1WM_PLUGIN_NAME ),
 				'col_status'     => __( 'Status', AI1WM_PLUGIN_NAME ),
