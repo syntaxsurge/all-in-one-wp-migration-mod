@@ -51,12 +51,40 @@ class Ai1wm_S3_Uploader {
 	 * @param  string $archive Relative archive path.
 	 * @return void
 	 */
-	public static function delete_remote( $archive ) {
+	public static function delete_remote( $archive, $remote_key = '' ) {
 		$archive  = self::normalize_archive( $archive );
 		$settings = Ai1wm_S3_Settings::get();
 		$client   = new Ai1wm_S3_Client( $settings );
 
-		$client->delete_object( $archive );
+		$relative_key = self::resolve_relative_remote_key( $remote_key, $archive, $settings );
+		if ( $relative_key === '' ) {
+			$relative_key = $archive;
+		}
+
+		$client->delete_object( $relative_key );
+	}
+
+	/**
+	 * Convert stored remote key into client-ready relative key.
+	 *
+	 * @param  string $remote_key Stored remote key (may include prefix).
+	 * @param  string $archive    Normalised archive name.
+	 * @param  array  $settings   S3 settings for prefix reference.
+	 * @return string
+	 */
+	private static function resolve_relative_remote_key( $remote_key, $archive, $settings ) {
+		$remote_key = ltrim( str_replace( '\\', '/', (string) $remote_key ), '/' );
+
+		if ( empty( $remote_key ) ) {
+			return $archive;
+		}
+
+		$prefix = isset( $settings['prefix'] ) ? ltrim( str_replace( '\\', '/', $settings['prefix'] ), '/' ) : '';
+		if ( $prefix && strpos( $remote_key, $prefix ) === 0 ) {
+			$remote_key = ltrim( substr( $remote_key, strlen( $prefix ) ), '/' );
+		}
+
+		return $remote_key ? $remote_key : $archive;
 	}
 
 	/**

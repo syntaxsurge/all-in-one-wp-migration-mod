@@ -101,7 +101,7 @@
 								<i class="ai1wm-icon-cloud-upload"></i>
 								<span><?php _e( 'Restore', AI1WM_PLUGIN_NAME ); ?></span>
 							</a>
-							<a href="#" class="ai1wm-button-blue ai1wm-backup-s3" data-toggle="modal" data-target="#ai1wmS3LogModal" data-type="upload" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" data-filename="<?php echo esc_attr( basename( $backup['filename'] ) ); ?>" data-state="<?php echo esc_attr( $archive_state ); ?>" data-log="<?php echo esc_attr( $archive_payload ); ?>" title="<?php echo esc_attr( $s3_configured ? __( 'Copy this backup to your S3 storage.', AI1WM_PLUGIN_NAME ) : __( 'Configure S3 storage to enable uploads.', AI1WM_PLUGIN_NAME ) ); ?>" <?php echo $s3_configured ? '' : ' disabled="disabled" aria-disabled="true"'; ?>>
+							<a href="#" class="ai1wm-button-blue ai1wm-button-icon ai1wm-backup-s3" data-toggle="modal" data-target="#ai1wmS3LogModal" data-type="upload" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" data-filename="<?php echo esc_attr( basename( $backup['filename'] ) ); ?>" data-state="<?php echo esc_attr( $archive_state ); ?>" data-log="<?php echo esc_attr( $archive_payload ); ?>" title="<?php echo esc_attr( $s3_configured ? __( 'Copy this backup to your S3 storage.', AI1WM_PLUGIN_NAME ) : __( 'Configure S3 storage to enable uploads.', AI1WM_PLUGIN_NAME ) ); ?>" <?php echo $s3_configured ? '' : ' disabled="disabled" aria-disabled="true"'; ?>>
 								<i class="ai1wm-icon-export"></i>
 								<span><?php _e( 'Copy to S3', AI1WM_PLUGIN_NAME ); ?></span>
 							</a>
@@ -113,9 +113,7 @@
 								<i class="ai1wm-icon-close"></i>
 								<span><?php _e( 'Delete', AI1WM_PLUGIN_NAME ); ?></span>
 							</a>
-							<div class="ai1wm-backup-status ai1wm-hide" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" data-filename="<?php echo esc_attr( basename( $backup['filename'] ) ); ?>" data-state="<?php echo esc_attr( $archive_state ); ?>" data-remote="<?php echo esc_attr( $archive_remote ); ?>" data-updated="<?php echo esc_attr( $archive_updated ); ?>" data-log="<?php echo esc_attr( $archive_payload ); ?>">
-								<?php echo esc_html( $archive_message ); ?>
-							</div>
+							<div class="ai1wm-backup-status ai1wm-hide" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" data-filename="<?php echo esc_attr( basename( $backup['filename'] ) ); ?>" data-state="<?php echo esc_attr( $archive_state ); ?>" data-remote="<?php echo esc_attr( $archive_remote ); ?>" data-updated="<?php echo esc_attr( $archive_updated ); ?>" data-log="<?php echo esc_attr( $archive_payload ); ?>" data-message="<?php echo esc_attr( $archive_message ); ?>" aria-live="polite"></div>
 						</td>
 					</tr>
 									<?php endforeach; ?>

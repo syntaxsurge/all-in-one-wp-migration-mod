@@ -143,7 +143,8 @@ class Ai1wm_Backups_Controller {
 
 		if ( $force_replace ) {
 			try {
-				Ai1wm_S3_Uploader::delete_remote( $archive );
+				$remote_key = isset( $status['remote_key'] ) ? $status['remote_key'] : '';
+				Ai1wm_S3_Uploader::delete_remote( $archive, $remote_key );
 			} catch ( Exception $e ) {
 				wp_send_json_error( array( 'errors' => array( sprintf( __( 'Unable to delete existing remote backup: %s', AI1WM_PLUGIN_NAME ), $e->getMessage() ) ) ) );
 			}
