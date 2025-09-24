@@ -35,6 +35,13 @@
 
 				<?php include AI1WM_TEMPLATES_PATH . '/common/report-problem.php'; ?>
 
+				<?php
+				$ai1wm_s3_settings    = isset( $s3_settings ) ? $s3_settings : array();
+				$ai1wm_s3_chunk_size  = isset( $s3_chunk_size ) ? $s3_chunk_size : AI1WM_S3_MULTIPART_CHUNK_SIZE;
+				$ai1wm_s3_max_retries = isset( $s3_max_retries ) ? $s3_max_retries : AI1WM_S3_MAX_RETRIES;
+				include AI1WM_TEMPLATES_PATH . '/backups/s3-settings.php';
+				?>
+
 				<form action="" method="post" id="ai1wm-backups-form" class="ai1wm-clear">
 
 					<?php if ( is_readable( AI1WM_BACKUPS_PATH ) && is_writable( AI1WM_BACKUPS_PATH ) ) : ?>
@@ -50,6 +57,26 @@
 								</thead>
 								<tbody>
 									<?php foreach ( $backups as $backup ) : ?>
+									<?php
+									$archive_key = ltrim( str_replace( '\\', '/', $backup['filename'] ), '/' );
+									$archive_status = isset( $s3_statuses[ $archive_key ] ) ? $s3_statuses[ $archive_key ] : array();
+									$archive_state = isset( $archive_status['state'] ) ? $archive_status['state'] : '';
+									$archive_message = isset( $archive_status['message'] ) ? $archive_status['message'] : '';
+									$archive_remote = isset( $archive_status['remote_key'] ) ? $archive_status['remote_key'] : '';
+									$archive_updated = isset( $archive_status['updated_at'] ) ? (int) $archive_status['updated_at'] : 0;
+									$status_text = '';
+									if ( $archive_state ) {
+										$status_text = $archive_message ? $archive_message : ucfirst( $archive_state );
+									}
+									if ( $archive_remote ) {
+										$status_text .= $status_text ? ' • ' : '';
+										$status_text .= sprintf( __( 'Destination: %s', AI1WM_PLUGIN_NAME ), $archive_remote );
+									}
+									if ( $archive_updated ) {
+										$status_text .= $status_text ? ' • ' : '';
+										$status_text .= sprintf( __( 'Updated %s ago', AI1WM_PLUGIN_NAME ), human_time_diff( $archive_updated ) );
+									}
+									?>
 									<tr>
 										<td class="ai1wm-column-name">
 											<?php if ( $backup['path'] ) : ?>
@@ -79,10 +106,17 @@
 												<i class="ai1wm-icon-cloud-upload"></i>
 												<span><?php _e( 'Restore', AI1WM_PLUGIN_NAME ); ?></span>
 											</a>
+											<a href="#" class="ai1wm-button-blue ai1wm-backup-s3" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" data-state="<?php echo esc_attr( $archive_state ); ?>" title="<?php echo esc_attr( $s3_configured ? __( 'Copy this backup to your S3 storage.', AI1WM_PLUGIN_NAME ) : __( 'Configure S3 storage to enable uploads.', AI1WM_PLUGIN_NAME ) ); ?>" <?php echo $s3_configured ? '' : ' disabled="disabled" aria-disabled="true"'; ?>>
+												<i class="ai1wm-icon-export"></i>
+												<span><?php _e( 'Copy to S3', AI1WM_PLUGIN_NAME ); ?></span>
+											</a>
 											<a href="#" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" class="ai1wm-button-red ai1wm-backup-delete">
 												<i class="ai1wm-icon-close"></i>
 												<span><?php _e( 'Delete', AI1WM_PLUGIN_NAME ); ?></span>
 											</a>
+											<div class="ai1wm-backup-status" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" data-state="<?php echo esc_attr( $archive_state ); ?>" data-remote="<?php echo esc_attr( $archive_remote ); ?>" data-updated="<?php echo esc_attr( $archive_updated ); ?>" aria-live="polite">
+												<?php echo esc_html( $status_text ); ?>
+											</div>
 										</td>
 									</tr>
 									<?php endforeach; ?>

@@ -158,6 +158,31 @@ define( 'AI1WM_MULTIPART_NAME', 'multipart.list' );
 // ========================
 define( 'AI1WM_FILEMAP_NAME', 'filemap.list' );
 
+// ==================================
+// = S3 Multipart Upload Chunk Size =
+// ==================================
+define( 'AI1WM_S3_MULTIPART_CHUNK_SIZE', 10485760 ); // 10MB default chunk size
+
+// ================================
+// = S3 Multipart Upload Retries =
+// ================================
+define( 'AI1WM_S3_MAX_RETRIES', 10 );
+
+// ============================
+// = S3 Settings Option Name =
+// ============================
+define( 'AI1WM_S3_SETTINGS_OPTION', 'ai1wm_s3_settings' );
+
+// ============================
+// = S3 Status Option Name =
+// ============================
+define( 'AI1WM_S3_STATUS_OPTION', 'ai1wm_s3_status' );
+
+// =======================
+// = S3 Cron Hook Name =
+// =======================
+define( 'AI1WM_S3_CRON_HOOK', 'ai1wm_s3_upload_job' );
+
 // =================================
 // = Archive Must-Use Plugins Name =
 // =================================

@@ -108,6 +108,9 @@ class Ai1wm_Main_Controller {
 
 		// Enqueue updater scripts and styles
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_updater_scripts_and_styles' ), 5 );
+
+		// Process S3 upload jobs
+		add_action( AI1WM_S3_CRON_HOOK, array( 'Ai1wm_S3_Uploader', 'run' ) );
 	}
 
 	/**
@@ -754,6 +757,14 @@ class Ai1wm_Main_Controller {
 			array( 'ai1wm_util' )
 		);
 
+		wp_enqueue_script(
+			'ai1wm_backups_s3',
+			Ai1wm_Template::asset_link( 'javascript/backups-s3.js' ),
+			array( 'ai1wm_backups', 'jquery' ),
+			AI1WM_VERSION,
+			true
+		);
+
 		wp_localize_script( 'ai1wm_backups', 'ai1wm_feedback', array(
 			'ajax'       => array(
 				'url' => wp_make_link_relative( admin_url( 'admin-ajax.php?action=ai1wm_feedback' ) ),
@@ -804,6 +815,22 @@ class Ai1wm_Main_Controller {
 			'thanks_for_submitting_your_feedback' => __( 'Thanks for submitting your feedback!', AI1WM_PLUGIN_NAME ),
 			'thanks_for_submitting_your_request'  => __( 'Thanks for submitting your request!', AI1WM_PLUGIN_NAME ),
 			'want_to_delete_this_file'            => __( 'Are you sure you want to delete this file?', AI1WM_PLUGIN_NAME ),
+		) );
+
+		wp_localize_script( 'ai1wm_backups_s3', 'ai1wm_s3', array(
+			'ajax'       => array(
+				'url' => wp_make_link_relative( admin_url( 'admin-ajax.php?action=ai1wm_s3_upload' ) ),
+			),
+			'secret_key' => get_option( AI1WM_SECRET_KEY ),
+			'configured' => Ai1wm_S3_Settings::is_configured(),
+			'strings'    => array(
+				'not_configured' => __( 'Configure S3 storage to enable uploads.', AI1WM_PLUGIN_NAME ),
+				'saving_required'=> __( 'Save your S3 settings before copying a backup.', AI1WM_PLUGIN_NAME ),
+				'missing_fields' => __( 'Please complete: %s', AI1WM_PLUGIN_NAME ),
+				'preparing'      => __( 'Scheduling upload...', AI1WM_PLUGIN_NAME ),
+				'failed_prefix'  => __( 'Upload failed:', AI1WM_PLUGIN_NAME ),
+				'generic_error'  => __( 'Unexpected error while uploading to S3.', AI1WM_PLUGIN_NAME ),
+			),
 		) );
 	}
 
@@ -911,8 +938,10 @@ class Ai1wm_Main_Controller {
 		add_action( 'wp_ajax_ai1wm_import', 'Ai1wm_Import_Controller::import' );
 		add_action( 'wp_ajax_ai1wm_status', 'Ai1wm_Status_Controller::status' );
 		add_action( 'wp_ajax_ai1wm_backups', 'Ai1wm_Backups_Controller::delete' );
+		add_action( 'wp_ajax_ai1wm_s3_upload', 'Ai1wm_Backups_Controller::upload_to_s3' );
 		add_action( 'wp_ajax_ai1wm_feedback', 'Ai1wm_Feedback_Controller::feedback' );
 		add_action( 'wp_ajax_ai1wm_report', 'Ai1wm_Report_Controller::report' );
+		add_action( 'admin_post_ai1wm_save_s3_settings', 'Ai1wm_Backups_Controller::save_s3_settings' );
 
 		// Update actions
 		if ( current_user_can( 'update_plugins' ) ) {

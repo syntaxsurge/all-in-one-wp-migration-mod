@@ -27,13 +27,19 @@ class Ai1wm_Backups_Controller {
 
 	public static function index() {
 		$model = new Ai1wm_Backups;
+		$settings = Ai1wm_S3_Settings::get();
 
 		Ai1wm_Template::render(
 			'backups/index',
 			array(
-				'backups'  => $model->get_files(),
-				'username' => get_option( AI1WM_AUTH_USER ),
-				'password' => get_option( AI1WM_AUTH_PASSWORD ),
+				'backups'        => $model->get_files(),
+				'username'       => get_option( AI1WM_AUTH_USER ),
+				'password'       => get_option( AI1WM_AUTH_PASSWORD ),
+				's3_settings'    => $settings,
+				's3_configured'  => Ai1wm_S3_Settings::is_configured(),
+				's3_statuses'    => Ai1wm_S3_Status::all(),
+				's3_chunk_size'  => AI1WM_S3_MULTIPART_CHUNK_SIZE,
+				's3_max_retries' => AI1WM_S3_MAX_RETRIES,
 			)
 		);
 	}
@@ -69,12 +75,70 @@ class Ai1wm_Backups_Controller {
 
 		try {
 			// Delete file
-			$model->delete_file( $archive );
+			if ( $model->delete_file( $archive ) ) {
+				Ai1wm_S3_Uploader::forget( $archive );
+			}
 		} catch ( Exception $e ) {
 			$errors[] = $e->getMessage();
 		}
 
 		echo json_encode( array( 'errors' => $errors ) );
 		exit;
+	}
+
+	public static function save_s3_settings() {
+		if ( ! current_user_can( 'import' ) ) {
+			wp_die( __( 'You are not allowed to perform this action.', AI1WM_PLUGIN_NAME ) );
+		}
+
+		check_admin_referer( 'ai1wm_s3_settings' );
+
+		$settings = array(
+			'endpoint'       => isset( $_POST['ai1wm_s3_endpoint'] ) ? wp_unslash( $_POST['ai1wm_s3_endpoint'] ) : '',
+			'region'         => isset( $_POST['ai1wm_s3_region'] ) ? wp_unslash( $_POST['ai1wm_s3_region'] ) : '',
+			'bucket'         => isset( $_POST['ai1wm_s3_bucket'] ) ? wp_unslash( $_POST['ai1wm_s3_bucket'] ) : '',
+			'prefix'         => isset( $_POST['ai1wm_s3_prefix'] ) ? wp_unslash( $_POST['ai1wm_s3_prefix'] ) : '',
+			'access_key'     => isset( $_POST['ai1wm_s3_access_key'] ) ? wp_unslash( $_POST['ai1wm_s3_access_key'] ) : '',
+			'secret_key'     => isset( $_POST['ai1wm_s3_secret_key'] ) ? wp_unslash( $_POST['ai1wm_s3_secret_key'] ) : '',
+			'use_path_style' => isset( $_POST['ai1wm_s3_use_path_style'] ) ? wp_unslash( $_POST['ai1wm_s3_use_path_style'] ) : '',
+		);
+
+		Ai1wm_S3_Settings::update( $settings );
+
+		$redirect = add_query_arg(
+			array(
+				'page'                 => 'ai1wm_backups',
+				'ai1wm_s3_settings'    => 'saved',
+			),
+			admin_url( 'admin.php' )
+		);
+
+		wp_safe_redirect( $redirect );
+		exit;
+	}
+
+	public static function upload_to_s3() {
+		if ( ! current_user_can( 'import' ) ) {
+			wp_send_json_error( array( 'errors' => array( __( 'You are not allowed to perform this action.', AI1WM_PLUGIN_NAME ) ) ) );
+		}
+
+		$params = stripslashes_deep( $_POST );
+
+		$secret_key = isset( $params['secret_key'] ) ? trim( $params['secret_key'] ) : null;
+		$archive    = isset( $params['archive'] ) ? trim( $params['archive'] ) : '';
+
+		try {
+			ai1wm_verify_secret_key( $secret_key );
+		} catch ( Ai1wm_Not_Valid_Secret_Key_Exception $e ) {
+			wp_send_json_error( array( 'errors' => array( $e->getMessage() ) ) );
+		}
+
+		try {
+			Ai1wm_S3_Uploader::dispatch( $archive );
+			$status = Ai1wm_S3_Status::get( $archive );
+			wp_send_json_success( array( 'status' => $status ) );
+		} catch ( Exception $e ) {
+			wp_send_json_error( array( 'errors' => array( $e->getMessage() ) ) );
+		}
 	}
 }
