@@ -167,6 +167,26 @@ class Ai1wm_S3_Client {
 	}
 
 	/**
+	 * Delete remote object if it exists.
+	 *
+	 * @param  string $remote_key Object key relative to backups directory.
+	 * @return void
+	 */
+	public function delete_object( $remote_key ) {
+		$remote_key = $this->prefix . ltrim( str_replace( '\\', '/', $remote_key ), '/' );
+		$remote_key = $this->trim_double_slashes( $remote_key );
+
+		$response = $this->signed_request( 'DELETE', $remote_key );
+		$code     = (int) wp_remote_retrieve_response_code( $response );
+
+		if ( $code === 404 ) {
+			return;
+		}
+
+		$this->guard_response( $response, __( 'Failed to delete remote backup object.', AI1WM_PLUGIN_NAME ) );
+	}
+
+	/**
 	 * Initiate multipart upload session.
 	 *
 	 * @param  string $remote_key Object key.

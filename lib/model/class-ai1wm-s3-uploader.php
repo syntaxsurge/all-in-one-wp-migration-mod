@@ -46,6 +46,20 @@ class Ai1wm_S3_Uploader {
 	}
 
 	/**
+	 * Delete existing remote object for archive.
+	 *
+	 * @param  string $archive Relative archive path.
+	 * @return void
+	 */
+	public static function delete_remote( $archive ) {
+		$archive  = self::normalize_archive( $archive );
+		$settings = Ai1wm_S3_Settings::get();
+		$client   = new Ai1wm_S3_Client( $settings );
+
+		$client->delete_object( $archive );
+	}
+
+	/**
 	 * Run upload job immediately (cron handler).
 	 *
 	 * @param  string $archive Relative archive path.

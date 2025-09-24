@@ -133,6 +133,22 @@ class Ai1wm_Backups_Controller {
 			wp_send_json_error( array( 'errors' => array( $e->getMessage() ) ) );
 		}
 
+		$status       = Ai1wm_S3_Status::get( $archive );
+		$current_state = isset( $status['state'] ) ? strtolower( $status['state'] ) : '';
+		if ( in_array( $current_state, array( 'queued', 'in_progress' ), true ) ) {
+			wp_send_json_error( array( 'errors' => array( __( 'An upload is already queued or running for this backup. Please wait for it to finish.', AI1WM_PLUGIN_NAME ) ) ) );
+		}
+
+		$force_replace = ! empty( $params['force_replace'] );
+
+		if ( $force_replace ) {
+			try {
+				Ai1wm_S3_Uploader::delete_remote( $archive );
+			} catch ( Exception $e ) {
+				wp_send_json_error( array( 'errors' => array( sprintf( __( 'Unable to delete existing remote backup: %s', AI1WM_PLUGIN_NAME ), $e->getMessage() ) ) ) );
+			}
+		}
+
 		try {
 			Ai1wm_S3_Uploader::dispatch( $archive );
 			$status = Ai1wm_S3_Status::get( $archive );
