@@ -105,7 +105,7 @@
 								<i class="ai1wm-icon-export"></i>
 								<span><?php _e( 'Copy to S3', AI1WM_PLUGIN_NAME ); ?></span>
 							</a>
-							<a href="#" class="ai1wm-button-gray ai1wm-backup-log-button" data-toggle="modal" data-target="#ai1wmS3LogModal" data-type="log" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" data-filename="<?php echo esc_attr( basename( $backup['filename'] ) ); ?>" data-log="<?php echo esc_attr( $archive_payload ); ?>" title="<?php esc_attr_e( 'View remote storage log', AI1WM_PLUGIN_NAME ); ?>">
+							<a href="#" class="ai1wm-button-gray ai1wm-button-icon ai1wm-backup-log-button" data-toggle="modal" data-target="#ai1wmS3LogModal" data-type="log" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" data-filename="<?php echo esc_attr( basename( $backup['filename'] ) ); ?>" data-log="<?php echo esc_attr( $archive_payload ); ?>" title="<?php esc_attr_e( 'View remote storage log', AI1WM_PLUGIN_NAME ); ?>">
 								<i class="ai1wm-icon-notification"></i>
 								<span><?php _e( 'View log', AI1WM_PLUGIN_NAME ); ?></span>
 							</a>
@@ -203,7 +203,7 @@
 									<td class="ai1wm-log-state"><?php echo esc_html( ucfirst( isset( $activity_status['state'] ) ? $activity_status['state'] : '' ) ); ?></td>
 									<td class="ai1wm-log-updated"><?php echo $activity_status['updated_at'] ? esc_html( sprintf( __( '%s ago', AI1WM_PLUGIN_NAME ), human_time_diff( $activity_status['updated_at'] ) ) ) : '—'; ?></td>
 									<td class="ai1wm-log-actions">
-								<a href="#" class="ai1wm-button-gray ai1wm-backup-log-button" data-toggle="modal" data-target="#ai1wmS3LogModal" data-type="log" data-archive="<?php echo esc_attr( $activity_archive ); ?>" data-filename="<?php echo esc_attr( basename( $activity_archive ) ); ?>" data-log="<?php echo esc_attr( $activity_payload ); ?>">
+								<a href="#" class="ai1wm-button-gray ai1wm-button-icon ai1wm-backup-log-button" data-toggle="modal" data-target="#ai1wmS3LogModal" data-type="log" data-archive="<?php echo esc_attr( $activity_archive ); ?>" data-filename="<?php echo esc_attr( basename( $activity_archive ) ); ?>" data-log="<?php echo esc_attr( $activity_payload ); ?>" title="<?php esc_attr_e( 'View remote storage log', AI1WM_PLUGIN_NAME ); ?>">
 											<i class="ai1wm-icon-notification"></i>
 											<span><?php _e( 'View log', AI1WM_PLUGIN_NAME ); ?></span>
 										</a>
