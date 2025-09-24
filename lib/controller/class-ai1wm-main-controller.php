@@ -813,10 +813,11 @@ class Ai1wm_Main_Controller {
 			array( 'ai1wm_util' )
 		);
 
+
 		wp_enqueue_script(
 			'ai1wm_backups_s3',
 			Ai1wm_Template::asset_link( 'javascript/backups-s3.js' ),
-			array( 'ai1wm_backups', 'jquery' ),
+			array( 'ai1wm_backups', 'jquery', 'ai1wm_bootstrap4' ),
 			AI1WM_VERSION,
 			true
 		);
