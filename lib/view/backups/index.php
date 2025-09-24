@@ -219,11 +219,23 @@
 					<?php endif; ?>
 				</div>
 
-				<div id="ai1wm-backup-log-overlay" class="ai1wm-backup-log-overlay" aria-hidden="true">
-					<div class="ai1wm-backup-log-modal" role="dialog" aria-modal="true" aria-labelledby="ai1wm-backup-log-title">
-						<button type="button" class="ai1wm-backup-log-close" aria-label="<?php esc_attr_e( 'Close', AI1WM_PLUGIN_NAME ); ?>">&times;</button>
-						<h3 id="ai1wm-backup-log-title"><?php _e( 'Remote storage log', AI1WM_PLUGIN_NAME ); ?></h3>
-						<pre class="ai1wm-backup-log-content"></pre>
+				<!-- Bootstrap modal for Remote Storage Log -->
+				<div class="modal fade" id="ai1wmS3LogModal" tabindex="-1" role="dialog" aria-labelledby="ai1wmS3LogModalTitle" aria-hidden="true">
+					<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+						<div class="modal-content">
+							<div class="modal-header">
+								<h5 class="modal-title" id="ai1wmS3LogModalTitle"><?php _e( 'Remote storage log', AI1WM_PLUGIN_NAME ); ?></h5>
+								<button type="button" class="close" data-dismiss="modal" aria-label="<?php esc_attr_e( 'Close', AI1WM_PLUGIN_NAME ); ?>">
+									<span aria-hidden="true">&times;</span>
+								</button>
+							</div>
+							<div class="modal-body">
+								<pre class="ai1wm-backup-log-content" style="white-space:pre-wrap"></pre>
+							</div>
+							<div class="modal-footer">
+								<button type="button" class="btn btn-secondary" data-dismiss="modal"><?php _e( 'Close', AI1WM_PLUGIN_NAME ); ?></button>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>

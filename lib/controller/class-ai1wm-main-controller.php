@@ -751,6 +751,34 @@ class Ai1wm_Main_Controller {
 			);
 		}
 
+		// Bootstrap 4 (requested): CSS + JS enqueued only on Backups page
+		wp_enqueue_style(
+			'ai1wm_bootstrap4',
+			'https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css',
+			array(),
+			'4.0.0'
+		);
+
+		// Ensure jQuery is present first (WordPress core)
+		wp_enqueue_script( 'jquery' );
+
+		// Popper + Bootstrap JS (depend on jQuery)
+		wp_enqueue_script(
+			'ai1wm_popper',
+			'https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js',
+			array( 'jquery' ),
+			'1.12.9',
+			true
+		);
+
+		wp_enqueue_script(
+			'ai1wm_bootstrap4',
+			'https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js',
+			array( 'jquery', 'ai1wm_popper' ),
+			'4.0.0',
+			true
+		);
+
 		$custom_css = 'body #ai1wm-s3-settings .ai1wm-backups-s3__heading, '
 			. 'body #ai1wm-s3-settings .ai1wm-backups-s3__heading h2, '
 			. 'body #ai1wm-s3-settings .ai1wm-backups-s3__description { text-align:left !important; }'
