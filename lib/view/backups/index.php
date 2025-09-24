@@ -95,23 +95,23 @@
 											<?php endif; ?>
 										</td>
 						<td class="ai1wm-column-actions ai1wm-backup-actions">
-							<a href="<?php echo ai1wm_backup_url( array( 'archive' => esc_attr( $backup['filename'] ) ) ); ?>" class="ai1wm-button-green ai1wm-button-icon ai1wm-backup-download" title="<?php esc_attr_e( 'Download', AI1WM_PLUGIN_NAME ); ?>">
+							<a href="<?php echo ai1wm_backup_url( array( 'archive' => esc_attr( $backup['filename'] ) ) ); ?>" class="ai1wm-button-green ai1wm-backup-download" title="<?php esc_attr_e( 'Download', AI1WM_PLUGIN_NAME ); ?>">
 								<i class="ai1wm-icon-arrow-down"></i>
 								<span><?php _e( 'Download', AI1WM_PLUGIN_NAME ); ?></span>
 							</a>
-							<a href="#" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" class="ai1wm-button-gray ai1wm-button-icon ai1wm-backup-restore" title="<?php esc_attr_e( 'Restore', AI1WM_PLUGIN_NAME ); ?>">
+							<a href="#" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" class="ai1wm-button-gray ai1wm-backup-restore" title="<?php esc_attr_e( 'Restore', AI1WM_PLUGIN_NAME ); ?>">
 								<i class="ai1wm-icon-cloud-upload"></i>
 								<span><?php _e( 'Restore', AI1WM_PLUGIN_NAME ); ?></span>
 							</a>
-							<a href="#" class="ai1wm-button-blue ai1wm-button-icon ai1wm-backup-s3" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" data-filename="<?php echo esc_attr( basename( $backup['filename'] ) ); ?>" data-state="<?php echo esc_attr( $archive_state ); ?>" data-log="<?php echo esc_attr( $archive_payload ); ?>" title="<?php echo esc_attr( $s3_configured ? __( 'Copy this backup to your S3 storage.', AI1WM_PLUGIN_NAME ) : __( 'Configure S3 storage to enable uploads.', AI1WM_PLUGIN_NAME ) ); ?>" <?php echo $s3_configured ? '' : ' disabled="disabled" aria-disabled="true"'; ?>>
+							<a href="#" class="ai1wm-button-blue ai1wm-backup-s3" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" data-filename="<?php echo esc_attr( basename( $backup['filename'] ) ); ?>" data-state="<?php echo esc_attr( $archive_state ); ?>" data-log="<?php echo esc_attr( $archive_payload ); ?>" title="<?php echo esc_attr( $s3_configured ? __( 'Copy this backup to your S3 storage.', AI1WM_PLUGIN_NAME ) : __( 'Configure S3 storage to enable uploads.', AI1WM_PLUGIN_NAME ) ); ?>" <?php echo $s3_configured ? '' : ' disabled="disabled" aria-disabled="true"'; ?>>
 								<i class="ai1wm-icon-export"></i>
 								<span><?php _e( 'Copy to S3', AI1WM_PLUGIN_NAME ); ?></span>
 							</a>
-							<a href="#" class="ai1wm-button-gray ai1wm-button-icon ai1wm-backup-log-button" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" data-filename="<?php echo esc_attr( basename( $backup['filename'] ) ); ?>" data-log="<?php echo esc_attr( $archive_payload ); ?>" title="<?php esc_attr_e( 'View remote storage log', AI1WM_PLUGIN_NAME ); ?>">
+							<a href="#" class="ai1wm-button-gray ai1wm-backup-log-button" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" data-filename="<?php echo esc_attr( basename( $backup['filename'] ) ); ?>" data-log="<?php echo esc_attr( $archive_payload ); ?>" title="<?php esc_attr_e( 'View remote storage log', AI1WM_PLUGIN_NAME ); ?>">
 								<i class="ai1wm-icon-notification"></i>
 								<span><?php _e( 'View log', AI1WM_PLUGIN_NAME ); ?></span>
 							</a>
-							<a href="#" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" class="ai1wm-button-red ai1wm-button-icon ai1wm-backup-delete" title="<?php esc_attr_e( 'Delete', AI1WM_PLUGIN_NAME ); ?>">
+							<a href="#" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" class="ai1wm-button-red ai1wm-backup-delete" title="<?php esc_attr_e( 'Delete', AI1WM_PLUGIN_NAME ); ?>">
 								<i class="ai1wm-icon-close"></i>
 								<span><?php _e( 'Delete', AI1WM_PLUGIN_NAME ); ?></span>
 							</a>
@@ -205,7 +205,7 @@
 									<td class="ai1wm-log-state"><?php echo esc_html( ucfirst( isset( $activity_status['state'] ) ? $activity_status['state'] : '' ) ); ?></td>
 									<td class="ai1wm-log-updated"><?php echo $activity_status['updated_at'] ? esc_html( sprintf( __( '%s ago', AI1WM_PLUGIN_NAME ), human_time_diff( $activity_status['updated_at'] ) ) ) : '—'; ?></td>
 									<td class="ai1wm-log-actions">
-										<a href="#" class="ai1wm-button-gray ai1wm-button-icon ai1wm-backup-log-button" data-archive="<?php echo esc_attr( $activity_archive ); ?>" data-filename="<?php echo esc_attr( basename( $activity_archive ) ); ?>" data-log="<?php echo esc_attr( $activity_payload ); ?>">
+								<a href="#" class="ai1wm-button-gray ai1wm-backup-log-button" data-archive="<?php echo esc_attr( $activity_archive ); ?>" data-filename="<?php echo esc_attr( basename( $activity_archive ) ); ?>" data-log="<?php echo esc_attr( $activity_payload ); ?>">
 											<i class="ai1wm-icon-notification"></i>
 											<span><?php _e( 'View log', AI1WM_PLUGIN_NAME ); ?></span>
 										</a>

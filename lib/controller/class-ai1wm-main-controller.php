@@ -751,7 +751,10 @@ class Ai1wm_Main_Controller {
 			);
 		}
 
-		$custom_css = 'body .ai1wm-backups-s3__heading { text-align:left; margin:15px 0; }'
+		$custom_css = 'body #ai1wm-s3-settings .ai1wm-backups-s3__heading, '
+			. 'body #ai1wm-s3-settings .ai1wm-backups-s3__heading h2, '
+			. 'body #ai1wm-s3-settings .ai1wm-backups-s3__description { text-align:left !important; }'
+			. 'body .ai1wm-backups-s3__heading { text-align:left; margin:15px 0; }'
 			. 'body .ai1wm-backups-s3__heading h2 { margin:0; display:flex; align-items:center; gap:8px; font-size:20px; }'
 			. 'body .ai1wm-backups-s3__heading .ai1wm-icon-cloud-upload { font-size:20px; }'
 			. 'body .ai1wm-backups-s3__description { margin:4px 0 0; color:#4c4c4c; text-align:left; }'
