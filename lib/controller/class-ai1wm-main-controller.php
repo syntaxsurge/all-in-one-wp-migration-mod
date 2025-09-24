@@ -785,6 +785,7 @@ class Ai1wm_Main_Controller {
 			. 'body .ai1wm-backups-s3__heading { text-align:left; margin:15px 0; }'
 			. 'body .ai1wm-backups-s3__heading h2 { margin:0; display:flex; align-items:center; gap:8px; font-size:20px; }'
 			. 'body .ai1wm-backups-s3__heading .ai1wm-icon-cloud-upload { font-size:20px; }'
+			. 'body .ai1wm-s3-config-heading .ai1wm-icon-export { font-size:20px; }'
 			. 'body .ai1wm-backups-s3__description { margin:4px 0 0; color:#4c4c4c; text-align:left; }'
 			. 'body .ai1wm-s3-form .description { margin-top:6px; font-size:12px; color:#6d6d6d; }'
 			. 'body .ai1wm-backups-s3-activity { margin-top:32px; }'

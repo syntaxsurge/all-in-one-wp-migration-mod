@@ -4,9 +4,19 @@ $ai1wm_s3_configured_attr = $s3_configured ? '1' : '0';
 $ai1wm_s3_missing = Ai1wm_S3_Settings::missing_required_fields();
 ?>
 
+
 <div class="ai1wm-field-set ai1wm-backups-s3" id="ai1wm-s3-settings" data-configured="<?php echo esc_attr( $ai1wm_s3_configured_attr ); ?>">
+	<div class="ai1wm-backups-s3__heading ai1wm-s3-config-heading">
+		<h2>
+			<i class="ai1wm-icon-export"></i>
+			<?php _e( 'Import / Export Configuration', AI1WM_PLUGIN_NAME ); ?>
+		</h2>
+		<p class="ai1wm-backups-s3__description">
+			<?php _e( 'Quickly copy your remote storage settings or apply a configuration shared from another site.', AI1WM_PLUGIN_NAME ); ?>
+		</p>
+	</div>
+
 	<div class="ai1wm-field ai1wm-s3-config-tools">
-		<label for="ai1wm-s3-config-import-input"><?php _e( 'Import / Export', AI1WM_PLUGIN_NAME ); ?></label>
 		<div class="ai1wm-s3-config-actions">
 			<button type="button" class="ai1wm-button-gray ai1wm-s3-config-export" id="ai1wm-s3-config-export">
 				<i class="ai1wm-icon-export"></i>
@@ -20,6 +30,7 @@ $ai1wm_s3_missing = Ai1wm_S3_Settings::missing_required_fields();
 		<textarea id="ai1wm-s3-config-import-input" class="ai1wm-s3-config-input" rows="3" placeholder="<?php esc_attr_e( 'Paste configuration JSON here and click “Apply configuration”.', AI1WM_PLUGIN_NAME ); ?>"></textarea>
 		<p class="ai1wm-s3-config-feedback" aria-live="polite"></p>
 	</div>
+
 
 	<div class="ai1wm-backups-s3__heading">
 		<h2>
