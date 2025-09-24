@@ -136,6 +136,7 @@ class Ai1wm_Backups_Controller {
 		try {
 			Ai1wm_S3_Uploader::dispatch( $archive );
 			$status = Ai1wm_S3_Status::get( $archive );
+			$status['filename'] = basename( $archive );
 			wp_send_json_success( array( 'status' => $status ) );
 		} catch ( Exception $e ) {
 			wp_send_json_error( array( 'errors' => array( $e->getMessage() ) ) );

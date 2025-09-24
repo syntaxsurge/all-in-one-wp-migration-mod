@@ -751,6 +751,31 @@ class Ai1wm_Main_Controller {
 			);
 		}
 
+		$custom_css = 'body .ai1wm-backups-s3__heading { text-align:left; margin:15px 0; }'
+			. 'body .ai1wm-backups-s3__heading h2 { margin:0; display:flex; align-items:center; gap:8px; font-size:20px; }'
+			. 'body .ai1wm-backups-s3__heading .ai1wm-icon-cloud-upload { font-size:20px; }'
+			. 'body .ai1wm-backups-s3__description { margin:4px 0 0; color:#4c4c4c; text-align:left; }'
+			. 'body .ai1wm-s3-form .description { margin-top:6px; font-size:12px; color:#6d6d6d; }'
+			. 'body .ai1wm-backups-s3-activity { margin-top:32px; }'
+			. 'body .ai1wm-backups-s3-activity h3 { margin-bottom:12px; }'
+			. 'body .ai1wm-backups-s3-activity .ai1wm-backups { margin-bottom:0; }'
+			. 'body .ai1wm-backups-s3-activity .ai1wm-backups td, body .ai1wm-backups-s3-activity .ai1wm-backups th { vertical-align:middle; }'
+			. 'body .ai1wm-backups-logs-empty { margin:0; color:#707070; }'
+			. 'body .ai1wm-backup-actions .ai1wm-button-icon { width:42px; height:42px; border-radius:50%; padding:0; display:inline-flex; align-items:center; justify-content:center; margin-right:8px; position:relative; }'
+			. 'body .ai1wm-backup-actions .ai1wm-button-icon:last-child { margin-right:0; }'
+			. 'body .ai1wm-backup-actions .ai1wm-button-icon span { position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }'
+			. 'body .ai1wm-backups-logs .ai1wm-button-icon { width:36px; height:36px; margin-right:0; }'
+			. 'body .ai1wm-backup-log-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; z-index:10000; }'
+			. 'body .ai1wm-backup-log-overlay.ai1wm-show { display:flex; }'
+			. 'body .ai1wm-backup-log-modal { position:relative; background:#fff; border-radius:8px; max-width:520px; width:92%; padding:24px 24px 28px; box-shadow:0 20px 45px rgba(0,0,0,0.18); }'
+			. 'body .ai1wm-backup-log-modal h3 { margin:0 0 16px; }'
+			. 'body .ai1wm-backup-log-content { margin:0; max-height:260px; overflow:auto; background:#f8f9f9; border-radius:6px; padding:16px; font-size:13px; line-height:1.5; }'
+			. 'body .ai1wm-backup-log-close { position:absolute; top:10px; right:12px; border:0; background:transparent; font-size:22px; color:#444; cursor:pointer; }'
+			. 'body .ai1wm-backup-log-close:focus { outline:2px solid #2271b1; outline-offset:2px; }'
+			. 'body #ai1wm-s3-settings .ai1wm-message { margin-top:0; }';
+
+		wp_add_inline_style( 'ai1wm_backups', $custom_css );
+
 		wp_enqueue_script(
 			'ai1wm_backups',
 			Ai1wm_Template::asset_link( 'javascript/backups.min.js' ),
@@ -817,12 +842,23 @@ class Ai1wm_Main_Controller {
 			'want_to_delete_this_file'            => __( 'Are you sure you want to delete this file?', AI1WM_PLUGIN_NAME ),
 		) );
 
+		$ai1wm_s3_statuses = Ai1wm_S3_Status::all();
+		if ( is_array( $ai1wm_s3_statuses ) ) {
+			foreach ( $ai1wm_s3_statuses as $activity_archive => &$activity_status ) {
+				if ( is_array( $activity_status ) ) {
+					$activity_status['filename'] = basename( $activity_archive );
+				}
+			}
+			unset( $activity_status );
+		}
+
 		wp_localize_script( 'ai1wm_backups_s3', 'ai1wm_s3', array(
 			'ajax'       => array(
 				'url' => wp_make_link_relative( admin_url( 'admin-ajax.php?action=ai1wm_s3_upload' ) ),
 			),
 			'secret_key' => get_option( AI1WM_SECRET_KEY ),
 			'configured' => Ai1wm_S3_Settings::is_configured(),
+			'statuses'   => $ai1wm_s3_statuses,
 			'strings'    => array(
 				'not_configured' => __( 'Configure S3 storage to enable uploads.', AI1WM_PLUGIN_NAME ),
 				'saving_required'=> __( 'Save your S3 settings before copying a backup.', AI1WM_PLUGIN_NAME ),
@@ -830,6 +866,32 @@ class Ai1wm_Main_Controller {
 				'preparing'      => __( 'Scheduling upload...', AI1WM_PLUGIN_NAME ),
 				'failed_prefix'  => __( 'Upload failed:', AI1WM_PLUGIN_NAME ),
 				'generic_error'  => __( 'Unexpected error while uploading to S3.', AI1WM_PLUGIN_NAME ),
+				'view_log'       => __( 'View log', AI1WM_PLUGIN_NAME ),
+				'col_backup'     => __( 'Backup', AI1WM_PLUGIN_NAME ),
+				'col_destination'=> __( 'Destination', AI1WM_PLUGIN_NAME ),
+				'col_status'     => __( 'Status', AI1WM_PLUGIN_NAME ),
+				'col_updated'    => __( 'Updated', AI1WM_PLUGIN_NAME ),
+				'col_logs'       => __( 'Logs', AI1WM_PLUGIN_NAME ),
+				'destination'    => __( 'Destination: %s', AI1WM_PLUGIN_NAME ),
+				'updated'        => __( 'Updated %s ago', AI1WM_PLUGIN_NAME ),
+				'no_log'         => __( 'No log message available yet.', AI1WM_PLUGIN_NAME ),
+				'modal_title'    => __( 'Remote storage log', AI1WM_PLUGIN_NAME ),
+				'modal_title_with_name' => __( 'Remote storage log: %s', AI1WM_PLUGIN_NAME ),
+				'time_second'    => __( 'a second', AI1WM_PLUGIN_NAME ),
+				'time_seconds'   => __( '%s seconds', AI1WM_PLUGIN_NAME ),
+				'time_minute'    => __( 'a minute', AI1WM_PLUGIN_NAME ),
+				'time_minutes'   => __( '%s minutes', AI1WM_PLUGIN_NAME ),
+				'time_hour'      => __( 'an hour', AI1WM_PLUGIN_NAME ),
+				'time_hours'     => __( '%s hours', AI1WM_PLUGIN_NAME ),
+				'time_day'       => __( 'a day', AI1WM_PLUGIN_NAME ),
+				'time_days'      => __( '%s days', AI1WM_PLUGIN_NAME ),
+				'state_labels'   => array(
+					'queued'      => __( 'Queued', AI1WM_PLUGIN_NAME ),
+					'in_progress' => __( 'In progress', AI1WM_PLUGIN_NAME ),
+					'success'     => __( 'Completed', AI1WM_PLUGIN_NAME ),
+					'failed'      => __( 'Failed', AI1WM_PLUGIN_NAME ),
+					'pending'     => __( 'Pending', AI1WM_PLUGIN_NAME ),
+				),
 			),
 		) );
 	}

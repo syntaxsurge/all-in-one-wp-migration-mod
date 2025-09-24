@@ -33,14 +33,14 @@
 					<?php _e( 'Backups', AI1WM_PLUGIN_NAME ); ?>
 				</h1>
 
-				<?php include AI1WM_TEMPLATES_PATH . '/common/report-problem.php'; ?>
-
 				<?php
 				$ai1wm_s3_settings    = isset( $s3_settings ) ? $s3_settings : array();
 				$ai1wm_s3_chunk_size  = isset( $s3_chunk_size ) ? $s3_chunk_size : AI1WM_S3_MULTIPART_CHUNK_SIZE;
 				$ai1wm_s3_max_retries = isset( $s3_max_retries ) ? $s3_max_retries : AI1WM_S3_MAX_RETRIES;
 				include AI1WM_TEMPLATES_PATH . '/backups/s3-settings.php';
 				?>
+
+				<?php include AI1WM_TEMPLATES_PATH . '/common/report-problem.php'; ?>
 
 				<form action="" method="post" id="ai1wm-backups-form" class="ai1wm-clear">
 
@@ -56,32 +56,29 @@
 									</tr>
 								</thead>
 								<tbody>
-									<?php foreach ( $backups as $backup ) : ?>
-									<?php
-									$archive_key = ltrim( str_replace( '\\', '/', $backup['filename'] ), '/' );
-									$archive_status = isset( $s3_statuses[ $archive_key ] ) ? $s3_statuses[ $archive_key ] : array();
-									$archive_state = isset( $archive_status['state'] ) ? $archive_status['state'] : '';
-									$archive_message = isset( $archive_status['message'] ) ? $archive_status['message'] : '';
-									$archive_remote = isset( $archive_status['remote_key'] ) ? $archive_status['remote_key'] : '';
-									$archive_updated = isset( $archive_status['updated_at'] ) ? (int) $archive_status['updated_at'] : 0;
-									$status_text = '';
-									if ( $archive_state ) {
-										$status_text = $archive_message ? $archive_message : ucfirst( $archive_state );
-									}
-									if ( $archive_remote ) {
-										$status_text .= $status_text ? ' • ' : '';
-										$status_text .= sprintf( __( 'Destination: %s', AI1WM_PLUGIN_NAME ), $archive_remote );
-									}
-									if ( $archive_updated ) {
-										$status_text .= $status_text ? ' • ' : '';
-										$status_text .= sprintf( __( 'Updated %s ago', AI1WM_PLUGIN_NAME ), human_time_diff( $archive_updated ) );
-									}
-									?>
-									<tr>
-										<td class="ai1wm-column-name">
-											<?php if ( $backup['path'] ) : ?>
-												<i class="ai1wm-icon-folder"></i>
-												<?php echo esc_html( $backup['path'] ); ?>
+					<?php foreach ( $backups as $backup ) : ?>
+					<?php
+					$archive_key     = ltrim( str_replace( '\\', '/', $backup['filename'] ), '/' );
+					$archive_status  = isset( $s3_statuses[ $archive_key ] ) ? $s3_statuses[ $archive_key ] : array();
+					$archive_state   = isset( $archive_status['state'] ) ? $archive_status['state'] : '';
+					$archive_message = isset( $archive_status['message'] ) ? $archive_status['message'] : '';
+					$archive_remote  = isset( $archive_status['remote_key'] ) ? $archive_status['remote_key'] : '';
+					$archive_updated = isset( $archive_status['updated_at'] ) ? (int) $archive_status['updated_at'] : 0;
+					$archive_payload = wp_json_encode( array(
+						'archive'    => $archive_key,
+						'filename'   => basename( $backup['filename'] ),
+						'path'       => $backup['path'],
+						'state'      => $archive_state,
+						'message'    => $archive_message,
+						'remote_key' => $archive_remote,
+						'updated_at' => $archive_updated,
+					) );
+					?>
+					<tr>
+						<td class="ai1wm-column-name">
+							<?php if ( $backup['path'] ) : ?>
+								<i class="ai1wm-icon-folder"></i>
+								<?php echo esc_html( $backup['path'] ); ?>
 												<br />
 											<?php endif; ?>
 											<i class="ai1wm-icon-file-zip"></i>
@@ -97,28 +94,32 @@
 												<?php echo size_format( $backup['size'], 2 ); ?>
 											<?php endif; ?>
 										</td>
-										<td class="ai1wm-column-actions ai1wm-backup-actions">
-											<a href="<?php echo ai1wm_backup_url( array( 'archive' => esc_attr( $backup['filename'] ) ) ); ?>" class="ai1wm-button-green ai1wm-backup-download">
-												<i class="ai1wm-icon-arrow-down"></i>
-												<span><?php _e( 'Download', AI1WM_PLUGIN_NAME ); ?></span>
-											</a>
-											<a href="#" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" class="ai1wm-button-gray ai1wm-backup-restore">
-												<i class="ai1wm-icon-cloud-upload"></i>
-												<span><?php _e( 'Restore', AI1WM_PLUGIN_NAME ); ?></span>
-											</a>
-											<a href="#" class="ai1wm-button-blue ai1wm-backup-s3" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" data-state="<?php echo esc_attr( $archive_state ); ?>" title="<?php echo esc_attr( $s3_configured ? __( 'Copy this backup to your S3 storage.', AI1WM_PLUGIN_NAME ) : __( 'Configure S3 storage to enable uploads.', AI1WM_PLUGIN_NAME ) ); ?>" <?php echo $s3_configured ? '' : ' disabled="disabled" aria-disabled="true"'; ?>>
-												<i class="ai1wm-icon-export"></i>
-												<span><?php _e( 'Copy to S3', AI1WM_PLUGIN_NAME ); ?></span>
-											</a>
-											<a href="#" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" class="ai1wm-button-red ai1wm-backup-delete">
-												<i class="ai1wm-icon-close"></i>
-												<span><?php _e( 'Delete', AI1WM_PLUGIN_NAME ); ?></span>
-											</a>
-											<div class="ai1wm-backup-status" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" data-state="<?php echo esc_attr( $archive_state ); ?>" data-remote="<?php echo esc_attr( $archive_remote ); ?>" data-updated="<?php echo esc_attr( $archive_updated ); ?>" aria-live="polite">
-												<?php echo esc_html( $status_text ); ?>
-											</div>
-										</td>
-									</tr>
+						<td class="ai1wm-column-actions ai1wm-backup-actions">
+							<a href="<?php echo ai1wm_backup_url( array( 'archive' => esc_attr( $backup['filename'] ) ) ); ?>" class="ai1wm-button-green ai1wm-button-icon ai1wm-backup-download" title="<?php esc_attr_e( 'Download', AI1WM_PLUGIN_NAME ); ?>">
+								<i class="ai1wm-icon-arrow-down"></i>
+								<span><?php _e( 'Download', AI1WM_PLUGIN_NAME ); ?></span>
+							</a>
+							<a href="#" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" class="ai1wm-button-gray ai1wm-button-icon ai1wm-backup-restore" title="<?php esc_attr_e( 'Restore', AI1WM_PLUGIN_NAME ); ?>">
+								<i class="ai1wm-icon-cloud-upload"></i>
+								<span><?php _e( 'Restore', AI1WM_PLUGIN_NAME ); ?></span>
+							</a>
+							<a href="#" class="ai1wm-button-blue ai1wm-button-icon ai1wm-backup-s3" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" data-filename="<?php echo esc_attr( basename( $backup['filename'] ) ); ?>" data-state="<?php echo esc_attr( $archive_state ); ?>" data-log="<?php echo esc_attr( $archive_payload ); ?>" title="<?php echo esc_attr( $s3_configured ? __( 'Copy this backup to your S3 storage.', AI1WM_PLUGIN_NAME ) : __( 'Configure S3 storage to enable uploads.', AI1WM_PLUGIN_NAME ) ); ?>" <?php echo $s3_configured ? '' : ' disabled="disabled" aria-disabled="true"'; ?>>
+								<i class="ai1wm-icon-export"></i>
+								<span><?php _e( 'Copy to S3', AI1WM_PLUGIN_NAME ); ?></span>
+							</a>
+							<a href="#" class="ai1wm-button-gray ai1wm-button-icon ai1wm-backup-log-button" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" data-filename="<?php echo esc_attr( basename( $backup['filename'] ) ); ?>" data-log="<?php echo esc_attr( $archive_payload ); ?>" title="<?php esc_attr_e( 'View remote storage log', AI1WM_PLUGIN_NAME ); ?>">
+								<i class="ai1wm-icon-notification"></i>
+								<span><?php _e( 'View log', AI1WM_PLUGIN_NAME ); ?></span>
+							</a>
+							<a href="#" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" class="ai1wm-button-red ai1wm-button-icon ai1wm-backup-delete" title="<?php esc_attr_e( 'Delete', AI1WM_PLUGIN_NAME ); ?>">
+								<i class="ai1wm-icon-close"></i>
+								<span><?php _e( 'Delete', AI1WM_PLUGIN_NAME ); ?></span>
+							</a>
+							<div class="ai1wm-backup-status ai1wm-hide" data-archive="<?php echo esc_attr( $backup['filename'] ); ?>" data-filename="<?php echo esc_attr( basename( $backup['filename'] ) ); ?>" data-state="<?php echo esc_attr( $archive_state ); ?>" data-remote="<?php echo esc_attr( $archive_remote ); ?>" data-updated="<?php echo esc_attr( $archive_updated ); ?>" data-log="<?php echo esc_attr( $archive_payload ); ?>">
+								<?php echo esc_html( $archive_message ); ?>
+							</div>
+						</td>
+					</tr>
 									<?php endforeach; ?>
 								</tbody>
 							</table>
@@ -154,6 +155,77 @@
 					<input type="hidden" name="ai1wm_manual_restore" value="1" />
 
 				</form>
+
+				<?php
+				$ai1wm_s3_activity_rows = array();
+				if ( ! empty( $s3_statuses ) ) {
+					foreach ( $s3_statuses as $activity_archive => $activity_status ) {
+						if ( empty( $activity_status['state'] ) && empty( $activity_status['message'] ) ) {
+							continue;
+						}
+						$ai1wm_s3_activity_rows[ $activity_archive ] = array_merge(
+							array(
+								'archive'    => $activity_archive,
+								'filename'   => basename( $activity_archive ),
+								'updated_at' => isset( $activity_status['updated_at'] ) ? (int) $activity_status['updated_at'] : 0,
+							),
+							$activity_status
+						);
+					}
+				}
+				?>
+
+				<div class="ai1wm-backups-s3-activity" id="ai1wm-backups-s3-activity">
+					<h3><?php _e( 'Remote Storage Activity', AI1WM_PLUGIN_NAME ); ?></h3>
+					<?php if ( ! empty( $ai1wm_s3_activity_rows ) ) : ?>
+						<table class="ai1wm-backups ai1wm-backups-logs">
+							<thead>
+								<tr>
+									<th><?php _e( 'Backup', AI1WM_PLUGIN_NAME ); ?></th>
+									<th><?php _e( 'Destination', AI1WM_PLUGIN_NAME ); ?></th>
+									<th><?php _e( 'Status', AI1WM_PLUGIN_NAME ); ?></th>
+									<th><?php _e( 'Updated', AI1WM_PLUGIN_NAME ); ?></th>
+									<th><?php _e( 'Logs', AI1WM_PLUGIN_NAME ); ?></th>
+								</tr>
+							</thead>
+							<tbody>
+							<?php foreach ( $ai1wm_s3_activity_rows as $activity_archive => $activity_status ) :
+								$activity_payload = wp_json_encode( array(
+									'archive'    => $activity_archive,
+									'filename'   => basename( $activity_archive ),
+									'state'      => isset( $activity_status['state'] ) ? $activity_status['state'] : '',
+									'message'    => isset( $activity_status['message'] ) ? $activity_status['message'] : '',
+									'remote_key' => isset( $activity_status['remote_key'] ) ? $activity_status['remote_key'] : '',
+									'updated_at' => $activity_status['updated_at'],
+								) );
+								?>
+								<tr data-archive="<?php echo esc_attr( $activity_archive ); ?>" data-log="<?php echo esc_attr( $activity_payload ); ?>">
+									<td class="ai1wm-log-name"><?php echo esc_html( basename( $activity_archive ) ); ?></td>
+									<td class="ai1wm-log-destination"><?php echo esc_html( isset( $activity_status['remote_key'] ) ? $activity_status['remote_key'] : '' ); ?></td>
+									<td class="ai1wm-log-state"><?php echo esc_html( ucfirst( isset( $activity_status['state'] ) ? $activity_status['state'] : '' ) ); ?></td>
+									<td class="ai1wm-log-updated"><?php echo $activity_status['updated_at'] ? esc_html( sprintf( __( '%s ago', AI1WM_PLUGIN_NAME ), human_time_diff( $activity_status['updated_at'] ) ) ) : '—'; ?></td>
+									<td class="ai1wm-log-actions">
+										<a href="#" class="ai1wm-button-gray ai1wm-button-icon ai1wm-backup-log-button" data-archive="<?php echo esc_attr( $activity_archive ); ?>" data-filename="<?php echo esc_attr( basename( $activity_archive ) ); ?>" data-log="<?php echo esc_attr( $activity_payload ); ?>">
+											<i class="ai1wm-icon-notification"></i>
+											<span><?php _e( 'View log', AI1WM_PLUGIN_NAME ); ?></span>
+										</a>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+							</tbody>
+						</table>
+					<?php else : ?>
+						<p class="ai1wm-backups-logs-empty"><?php _e( 'No remote storage activity yet.', AI1WM_PLUGIN_NAME ); ?></p>
+					<?php endif; ?>
+				</div>
+
+				<div id="ai1wm-backup-log-overlay" class="ai1wm-backup-log-overlay" aria-hidden="true">
+					<div class="ai1wm-backup-log-modal" role="dialog" aria-modal="true" aria-labelledby="ai1wm-backup-log-title">
+						<button type="button" class="ai1wm-backup-log-close" aria-label="<?php esc_attr_e( 'Close', AI1WM_PLUGIN_NAME ); ?>">&times;</button>
+						<h3 id="ai1wm-backup-log-title"><?php _e( 'Remote storage log', AI1WM_PLUGIN_NAME ); ?></h3>
+						<pre class="ai1wm-backup-log-content"></pre>
+					</div>
+				</div>
 			</div>
 		</div>
 		<div class="ai1wm-right">
