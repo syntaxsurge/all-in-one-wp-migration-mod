@@ -40,6 +40,7 @@ class Ai1wm_Backups_Controller {
 				's3_statuses'    => Ai1wm_S3_Status::all(),
 				's3_chunk_size'  => AI1WM_S3_MULTIPART_CHUNK_SIZE,
 				's3_max_retries' => AI1WM_S3_MAX_RETRIES,
+				's3_concurrency' => AI1WM_S3_CONCURRENCY,
 			)
 		);
 	}

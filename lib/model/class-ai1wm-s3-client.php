@@ -101,21 +101,27 @@ class Ai1wm_S3_Client {
 	/**
 	 * Upload file as multipart object.
 	 *
-	 * @param  string  $file_path  Absolute path to archive.
-	 * @param  string  $remote_key Object key relative to bucket.
-	 * @param  integer $chunk_size Chunk size in bytes.
+	 * @param  string  $file_path    Absolute path to archive.
+	 * @param  string  $remote_key   Object key relative to bucket.
+	 * @param  integer $chunk_size   Chunk size in bytes.
+	 * @param  integer $concurrency  Number of concurrent transfers.
 	 * @throws Ai1wm_S3_Exception When upload fails.
 	 */
-	public function upload( $file_path, $remote_key, $chunk_size = AI1WM_S3_MULTIPART_CHUNK_SIZE ) {
+	public function upload( $file_path, $remote_key, $chunk_size = AI1WM_S3_MULTIPART_CHUNK_SIZE, $concurrency = AI1WM_S3_CONCURRENCY ) {
 		if ( ! is_readable( $file_path ) ) {
 			throw new Ai1wm_S3_Exception( sprintf( __( 'Backup file %s is not readable.', AI1WM_PLUGIN_NAME ), basename( $file_path ) ) );
 		}
 
 		$remote_key = $this->prefix . ltrim( str_replace( '\\', '/', $remote_key ), '/' );
 		$remote_key = $this->trim_double_slashes( $remote_key );
+		$chunk_size = (int) $chunk_size;
+		if ( $chunk_size <= 0 ) {
+			$chunk_size = AI1WM_S3_MULTIPART_CHUNK_SIZE;
+		}
+
+		$concurrency = max( 1, (int) apply_filters( 'ai1wm_s3_concurrency', $concurrency, $file_path, $remote_key ) );
 
 		$upload_id = null;
-		$parts     = array();
 		$handle    = ai1wm_open( $file_path, 'rb' );
 
 		if ( ! $handle ) {
@@ -125,27 +131,10 @@ class Ai1wm_S3_Client {
 		try {
 			$upload_id = $this->create_multipart_upload( $remote_key );
 
-			$part_number = 1;
-
-			while ( ! feof( $handle ) ) {
-				$chunk = fread( $handle, $chunk_size );
-
-				if ( $chunk === false ) {
-					throw new Ai1wm_S3_Exception( __( 'Error while reading backup chunk.', AI1WM_PLUGIN_NAME ) );
-				}
-
-				if ( $chunk === '' ) {
-					continue;
-				}
-
-				$etag = $this->upload_part_with_retry( $remote_key, $upload_id, $part_number, $chunk );
-
-				$parts[] = array(
-					'PartNumber' => $part_number,
-					'ETag'       => $etag,
-				);
-
-				$part_number++;
+			if ( $concurrency > 1 && function_exists( 'curl_multi_init' ) ) {
+				$parts = $this->upload_parts_concurrently( $handle, $remote_key, $upload_id, $chunk_size, $concurrency );
+			} else {
+				$parts = $this->upload_parts_sequentially( $handle, $remote_key, $upload_id, $chunk_size );
 			}
 
 			if ( empty( $parts ) ) {
@@ -154,16 +143,208 @@ class Ai1wm_S3_Client {
 
 			$this->complete_multipart_upload( $remote_key, $upload_id, $parts );
 		} catch ( Exception $e ) {
-			ai1wm_close( $handle );
-
 			if ( $upload_id ) {
-				$this->abort_multipart_upload( $remote_key, $upload_id );
+				try {
+					$this->abort_multipart_upload( $remote_key, $upload_id );
+				} catch ( Exception $abort_exception ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCATCH
+					// Swallow abort exceptions to preserve the original failure context.
+				}
 			}
 
 			throw $e;
+		} finally {
+			ai1wm_close( $handle );
+		}
+	}
+
+	/**
+	 * Upload parts sequentially.
+	 *
+	 * @param resource $handle     Open file handle.
+	 * @param string   $remote_key Remote object key.
+	 * @param string   $upload_id  Multipart upload identifier.
+	 * @param int      $chunk_size Chunk size in bytes.
+	 *
+	 * @return array
+	 */
+	private function upload_parts_sequentially( $handle, $remote_key, $upload_id, $chunk_size ) {
+		$parts = array();
+		$part_number = 1;
+
+		while ( ! feof( $handle ) ) {
+			$chunk = fread( $handle, $chunk_size );
+
+			if ( $chunk === false ) {
+				throw new Ai1wm_S3_Exception( __( 'Error while reading backup chunk.', AI1WM_PLUGIN_NAME ) );
+			}
+
+			if ( $chunk === '' ) {
+				continue;
+			}
+
+			$etag = $this->upload_part_with_retry( $remote_key, $upload_id, $part_number, $chunk );
+
+			$parts[] = array(
+				'PartNumber' => $part_number,
+				'ETag'       => $etag,
+			);
+
+			$part_number++;
 		}
 
-		ai1wm_close( $handle );
+		return $parts;
+	}
+
+	/**
+	 * Upload parts concurrently using curl_multi.
+	 *
+	 * @param resource $handle      Open file handle.
+	 * @param string   $remote_key  Remote object key.
+	 * @param string   $upload_id   Multipart upload identifier.
+	 * @param int      $chunk_size  Chunk size in bytes.
+	 * @param int      $concurrency Number of simultaneous uploads.
+	 *
+	 * @return array
+	 */
+	private function upload_parts_concurrently( $handle, $remote_key, $upload_id, $chunk_size, $concurrency ) {
+		$multi = curl_multi_init();
+		if ( false === $multi ) {
+			return $this->upload_parts_sequentially( $handle, $remote_key, $upload_id, $chunk_size );
+		}
+
+		$completed_parts = array();
+		$active_jobs     = array();
+		$retry_queue     = array();
+		$part_number     = 1;
+		$eof_reached     = false;
+
+		try {
+			while ( true ) {
+				while ( count( $active_jobs ) < $concurrency ) {
+					if ( ! empty( $retry_queue ) ) {
+						$job = array_shift( $retry_queue );
+					} elseif ( ! $eof_reached ) {
+						$chunk = fread( $handle, $chunk_size );
+
+						if ( $chunk === false ) {
+							throw new Ai1wm_S3_Exception( __( 'Error while reading backup chunk.', AI1WM_PLUGIN_NAME ) );
+						}
+
+						if ( $chunk === '' ) {
+							$eof_reached = true;
+							continue;
+						}
+
+						$job = array(
+							'part'    => $part_number,
+							'attempt' => 1,
+							'chunk'   => $chunk,
+						);
+
+						$part_number++;
+					} else {
+						break;
+					}
+
+					$this->start_concurrent_job( $multi, $active_jobs, $remote_key, $upload_id, $job );
+				}
+
+				if ( empty( $active_jobs ) ) {
+					if ( $eof_reached && empty( $retry_queue ) ) {
+						break;
+					}
+				}
+
+				$exec_status = curl_multi_exec( $multi, $running );
+				if ( $exec_status !== CURLM_OK && $exec_status !== CURLM_CALL_MULTI_PERFORM ) {
+					throw new Ai1wm_S3_Exception( sprintf( __( 'Unexpected cURL error: %s', AI1WM_PLUGIN_NAME ), $exec_status ) );
+				}
+
+				while ( $info = curl_multi_info_read( $multi ) ) {
+					$handle_id = (int) $info['handle'];
+					if ( ! isset( $active_jobs[ $handle_id ] ) ) {
+						curl_multi_remove_handle( $multi, $info['handle'] );
+						curl_close( $info['handle'] );
+						continue;
+					}
+
+					$job = $active_jobs[ $handle_id ];
+					unset( $active_jobs[ $handle_id ] );
+
+					$response_content = curl_multi_getcontent( $info['handle'] );
+					$header_size      = curl_getinfo( $info['handle'], CURLINFO_HEADER_SIZE );
+					$http_code        = (int) curl_getinfo( $info['handle'], CURLINFO_RESPONSE_CODE );
+					$headers_raw      = substr( $response_content, 0, $header_size );
+					$body_raw         = substr( $response_content, $header_size );
+					$error_message    = curl_error( $info['handle'] );
+
+					curl_multi_remove_handle( $multi, $info['handle'] );
+					curl_close( $info['handle'] );
+					unset( $job['handle'] );
+
+					if ( $info['result'] !== CURLE_OK || $http_code < 200 || $http_code >= 300 ) {
+						if ( $job['attempt'] >= AI1WM_S3_MAX_RETRIES ) {
+							throw new Ai1wm_S3_Exception(
+								sprintf(
+									__( 'Multipart upload failed for part %1$d: %2$s', AI1WM_PLUGIN_NAME ),
+									(int) $job['part'],
+									$this->describe_curl_failure( $error_message, $http_code, $body_raw )
+								)
+							);
+						}
+
+						$job['attempt']++;
+						$retry_queue[] = $job;
+						continue;
+					}
+
+					$etag = $this->extract_etag_from_headers( $headers_raw );
+					if ( empty( $etag ) ) {
+						if ( $job['attempt'] >= AI1WM_S3_MAX_RETRIES ) {
+							throw new Ai1wm_S3_Exception( sprintf( __( 'Multipart upload failed for part %d: missing ETag.', AI1WM_PLUGIN_NAME ), (int) $job['part'] ) );
+						}
+
+						$job['attempt']++;
+						$retry_queue[] = $job;
+						continue;
+					}
+
+					$completed_parts[] = array(
+						'PartNumber' => (int) $job['part'],
+						'ETag'       => $etag,
+					);
+					unset( $job['chunk'] );
+				}
+
+				if ( $running ) {
+					$select = curl_multi_select( $multi, 1.0 );
+					if ( $select === -1 ) {
+						usleep( 100000 );
+					}
+				}
+			}
+		} catch ( Exception $e ) {
+			foreach ( $active_jobs as $job ) {
+				if ( isset( $job['handle'] ) && is_resource( $job['handle'] ) ) {
+					curl_multi_remove_handle( $multi, $job['handle'] );
+					curl_close( $job['handle'] );
+				}
+			}
+
+			curl_multi_close( $multi );
+			throw $e;
+		}
+
+		curl_multi_close( $multi );
+
+		usort(
+			$completed_parts,
+			static function ( $a, $b ) {
+				return (int) $a['PartNumber'] <=> (int) $b['PartNumber'];
+			}
+		);
+
+		return $completed_parts;
 	}
 
 	/**
@@ -307,6 +488,160 @@ class Ai1wm_S3_Client {
 	}
 
 	/**
+	 * Create and queue a concurrent upload job.
+	 *
+	 * @param resource $multi       curl_multi handle.
+	 * @param array    $active_jobs Active jobs collection (passed by reference).
+	 * @param string   $remote_key  Remote object key.
+	 * @param string   $upload_id   Multipart identifier.
+	 * @param array    $job         Job metadata.
+	 *
+	 * @return void
+	 */
+	private function start_concurrent_job( $multi, array &$active_jobs, $remote_key, $upload_id, array $job ) {
+		$request = $this->prepare_signed_request(
+			'PUT',
+			$remote_key,
+			array(
+				'partNumber' => (string) $job['part'],
+				'uploadId'   => $upload_id,
+			),
+			array(),
+			$job['chunk']
+		);
+
+		$handle = curl_init( $request['url'] );
+		if ( false === $handle ) {
+			throw new Ai1wm_S3_Exception( __( 'Unable to initialize upload request.', AI1WM_PLUGIN_NAME ) );
+		}
+
+		curl_setopt( $handle, CURLOPT_CUSTOMREQUEST, 'PUT' );
+		curl_setopt( $handle, CURLOPT_HTTPHEADER, $this->format_curl_headers( $request['headers'] ) );
+		curl_setopt( $handle, CURLOPT_POSTFIELDS, $job['chunk'] );
+		curl_setopt( $handle, CURLOPT_RETURNTRANSFER, true );
+		curl_setopt( $handle, CURLOPT_HEADER, true );
+		curl_setopt( $handle, CURLOPT_TIMEOUT, 120 );
+		curl_setopt( $handle, CURLOPT_CONNECTTIMEOUT, 30 );
+		curl_setopt( $handle, CURLOPT_NOSIGNAL, true );
+
+		curl_multi_add_handle( $multi, $handle );
+		$job['handle'] = $handle;
+		$active_jobs[ (int) $handle ] = $job;
+	}
+
+	/**
+	 * Build signed request metadata without executing it.
+	 *
+	 * @param string $method     HTTP method.
+	 * @param string $remote_key Object key relative to bucket.
+	 * @param array  $query      Query parameters.
+	 * @param array  $headers    Additional headers.
+	 * @param string $body       Request body.
+	 *
+	 * @return array
+	 */
+	private function prepare_signed_request( $method, $remote_key, array $query = array(), array $headers = array(), $body = '' ) {
+		$datetime    = gmdate( 'Ymd\THis\Z' );
+		$datestamp   = gmdate( 'Ymd' );
+		$payload     = is_string( $body ) ? $body : '';
+		$payload_hash = hash( 'sha256', $payload );
+
+		$canonical = $this->build_canonical_request( $method, $remote_key, $query, $headers, $payload_hash, $datetime );
+		$signature = $this->build_authorization_header( $canonical, $datestamp, $datetime, $headers );
+
+		$request_headers = $canonical['headers'];
+		$request_headers['Authorization'] = $signature;
+
+		$url = $this->build_request_url( $canonical['uri_path'], $canonical['query_string'] );
+
+		return array(
+			'method'  => $method,
+			'url'     => $url,
+			'headers' => $request_headers,
+			'body'    => $payload,
+		);
+	}
+
+	/**
+	 * Normalise headers for cURL.
+	 *
+	 * @param  array $headers Header array.
+	 * @return array
+	 */
+	private function format_curl_headers( array $headers ) {
+		$formatted = array();
+		foreach ( $headers as $name => $value ) {
+			if ( is_array( $value ) ) {
+				foreach ( $value as $item ) {
+					$formatted[] = $this->normalise_header_name( $name ) . ': ' . $item;
+				}
+			} else {
+				$formatted[] = $this->normalise_header_name( $name ) . ': ' . $value;
+			}
+		}
+
+		return $formatted;
+	}
+
+	/**
+	 * Convert header name to canonical case.
+	 *
+	 * @param  string $name Header name.
+	 * @return string
+	 */
+	private function normalise_header_name( $name ) {
+		$segments = explode( '-', (string) $name );
+		$segments = array_map( 'ucfirst', $segments );
+
+		return implode( '-', $segments );
+	}
+
+	/**
+	 * Extract ETag header value.
+	 *
+	 * @param  string $headers Raw header string.
+	 * @return string
+	 */
+	private function extract_etag_from_headers( $headers ) {
+		if ( preg_match_all( '/ETag\s*:\s*("[^"]+"|[^\r\n]+)/i', (string) $headers, $matches ) && ! empty( $matches[1] ) ) {
+			$etag = end( $matches[1] );
+			return trim( $etag );
+		}
+
+		return '';
+	}
+
+	/**
+	 * Create human readable error summary for failed transfers.
+	 *
+	 * @param  string $curl_error cURL error text.
+	 * @param  int    $http_code  HTTP status code.
+	 * @param  string $body       Response body.
+	 * @return string
+	 */
+	private function describe_curl_failure( $curl_error, $http_code, $body ) {
+		if ( ! empty( $curl_error ) ) {
+			return $curl_error;
+		}
+
+		if ( $http_code >= 400 ) {
+			$raw_body = substr( (string) $body, 0, 200 );
+			if ( function_exists( 'wp_strip_all_tags' ) ) {
+				$snippet = trim( wp_strip_all_tags( $raw_body ) );
+			} else {
+				$snippet = trim( strip_tags( $raw_body ) );
+			}
+			return sprintf( 'HTTP %d %s', (int) $http_code, $snippet );
+		}
+
+		if ( $http_code > 0 ) {
+			return sprintf( 'HTTP %d', (int) $http_code );
+		}
+
+		return __( 'Unknown transfer error.', AI1WM_PLUGIN_NAME );
+	}
+
+	/**
 	 * Send signed request to S3 endpoint.
 	 *
 	 * @param string $method HTTP method.
@@ -318,27 +653,15 @@ class Ai1wm_S3_Client {
 	 * @return array|WP_Error
 	 */
 	private function signed_request( $method, $remote_key, array $query = array(), array $headers = array(), $body = '' ) {
-		$datetime   = gmdate( 'Ymd\THis\Z' );
-		$datestamp  = gmdate( 'Ymd' );
-		$payload    = is_string( $body ) ? $body : '';
-		$payload_hash = hash( 'sha256', $payload );
-
-		$canonical = $this->build_canonical_request( $method, $remote_key, $query, $headers, $payload_hash, $datetime );
-		$signature = $this->build_authorization_header( $canonical, $datestamp, $datetime, $headers );
-
-		$request_headers = $canonical['headers'];
-		$request_headers['Authorization'] = $signature;
-
-		$args = array(
-			'body'    => $payload,
-			'headers' => $request_headers,
-			'method'  => $method,
+		$request = $this->prepare_signed_request( $method, $remote_key, $query, $headers, $body );
+		$args    = array(
+			'body'    => $request['body'],
+			'headers' => $request['headers'],
+			'method'  => $request['method'],
 			'timeout' => 60,
 		);
 
-		$url = $this->build_request_url( $canonical['uri_path'], $canonical['query_string'] );
-
-		$response = wp_remote_request( $url, $args );
+		$response = wp_remote_request( $request['url'], $args );
 
 		if ( is_wp_error( $response ) ) {
 			throw new Ai1wm_S3_Exception( $response->get_error_message() );

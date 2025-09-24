@@ -148,7 +148,7 @@ class Ai1wm_S3_Uploader {
 			);
 
 			$client = new Ai1wm_S3_Client( $settings );
-			$client->upload( $file, $archive );
+			$client->upload( $file, $archive, AI1WM_S3_MULTIPART_CHUNK_SIZE, AI1WM_S3_CONCURRENCY );
 
 			Ai1wm_S3_Status::update(
 				$archive,

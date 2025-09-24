@@ -1,13 +1,16 @@
 <?php
-$ai1wm_s3_labels   = Ai1wm_S3_Settings::field_labels();
+$ai1wm_s3_labels          = Ai1wm_S3_Settings::field_labels();
 $ai1wm_s3_configured_attr = $s3_configured ? '1' : '0';
-$ai1wm_s3_missing = Ai1wm_S3_Settings::missing_required_fields();
+$ai1wm_s3_missing         = Ai1wm_S3_Settings::missing_required_fields();
+$ai1wm_s3_chunk_size      = isset( $s3_chunk_size ) ? (int) $s3_chunk_size : AI1WM_S3_MULTIPART_CHUNK_SIZE;
+$ai1wm_s3_max_retries     = isset( $s3_max_retries ) ? (int) $s3_max_retries : AI1WM_S3_MAX_RETRIES;
+$ai1wm_s3_concurrency     = isset( $s3_concurrency ) ? (int) $s3_concurrency : AI1WM_S3_CONCURRENCY;
 ?>
 
 
 <div class="ai1wm-field-set ai1wm-backups-s3" id="ai1wm-s3-settings" data-configured="<?php echo esc_attr( $ai1wm_s3_configured_attr ); ?>">
 	<div class="ai1wm-backups-s3__heading ai1wm-s3-config-heading">
-		<h2>
+		<h2 id="ai1wm-s3-config-heading">
 			<i class="ai1wm-icon-export"></i>
 			<?php _e( 'Import / Export Configuration', AI1WM_PLUGIN_NAME ); ?>
 		</h2>
@@ -27,7 +30,7 @@ $ai1wm_s3_missing = Ai1wm_S3_Settings::missing_required_fields();
 				<?php _e( 'Apply configuration', AI1WM_PLUGIN_NAME ); ?>
 			</button>
 		</div>
-		<textarea id="ai1wm-s3-config-import-input" class="ai1wm-s3-config-input" rows="3" placeholder="<?php esc_attr_e( 'Paste configuration JSON here and click “Apply configuration”.', AI1WM_PLUGIN_NAME ); ?>"></textarea>
+		<textarea id="ai1wm-s3-config-import-input" class="ai1wm-s3-config-input" rows="3" aria-labelledby="ai1wm-s3-config-heading" placeholder="<?php esc_attr_e( 'Paste configuration JSON here and click “Apply configuration”.', AI1WM_PLUGIN_NAME ); ?>"></textarea>
 		<p class="ai1wm-s3-config-feedback" aria-live="polite"></p>
 	</div>
 
@@ -113,10 +116,13 @@ $ai1wm_s3_missing = Ai1wm_S3_Settings::missing_required_fields();
 	</form>
 
 	<p class="ai1wm-s3-hint">
-		<?php printf(
-			__( 'Uploads use %1$s chunks with up to %2$d retries per part.', AI1WM_PLUGIN_NAME ),
+		<?php
+		printf(
+			__( 'Uploads use %1$s chunks with up to %2$d retries per part and %3$d concurrent transfers.', AI1WM_PLUGIN_NAME ),
 			size_format( $ai1wm_s3_chunk_size ),
-			(int) $ai1wm_s3_max_retries
-		); ?>
+			(int) $ai1wm_s3_max_retries,
+			(int) $ai1wm_s3_concurrency
+		);
+		?>
 	</p>
 </div>

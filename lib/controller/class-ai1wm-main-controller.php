@@ -830,7 +830,7 @@ class Ai1wm_Main_Controller {
 			'ai1wm_backups_s3',
 			Ai1wm_Template::asset_link( 'javascript/backups-s3.js' ),
 			array( 'ai1wm_backups', 'jquery', 'ai1wm_bootstrap4' ),
-			AI1WM_VERSION . '-s3-config-1',
+			AI1WM_VERSION . '-s3-concurrency-1',
 			true
 		);
 

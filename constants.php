@@ -168,6 +168,11 @@ define( 'AI1WM_S3_MULTIPART_CHUNK_SIZE', 10485760 ); // 10MB default chunk size
 // ================================
 define( 'AI1WM_S3_MAX_RETRIES', 10 );
 
+// ======================================
+// = S3 Multipart Concurrent Transfers =
+// ======================================
+define( 'AI1WM_S3_CONCURRENCY', 3 );
+
 // ============================
 // = S3 Settings Option Name =
 // ============================
