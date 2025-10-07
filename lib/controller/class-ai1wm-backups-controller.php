@@ -160,4 +160,111 @@ class Ai1wm_Backups_Controller {
 			wp_send_json_error( array( 'errors' => array( $e->getMessage() ) ) );
 		}
 	}
+
+	/**
+	 * AJAX: List S3 objects/prefixes under configured bucket/prefix.
+	 */
+	public static function list_s3_objects() {
+		if ( ! current_user_can( 'import' ) ) {
+			wp_send_json_error( array( 'errors' => array( __( 'You are not allowed to perform this action.', AI1WM_PLUGIN_NAME ) ) ) );
+		}
+
+		$missing = Ai1wm_S3_Settings::missing_required_fields();
+		if ( ! empty( $missing ) ) {
+			wp_send_json_error( array( 'errors' => array( sprintf( __( 'Missing required S3 settings: %s.', AI1WM_PLUGIN_NAME ), implode( ', ', $missing ) ) ) ) );
+		}
+
+		$params  = stripslashes_deep( $_GET );
+		$path    = isset( $params['path'] ) ? trim( (string) $params['path'] ) : '';
+		$token   = isset( $params['token'] ) ? (string) $params['token'] : '';
+		$max     = isset( $params['max'] ) ? (int) $params['max'] : 200;
+
+		try {
+			$client  = new Ai1wm_S3_Client( Ai1wm_S3_Settings::get() );
+			$result  = $client->list_objects( $path, $token, $max );
+
+			// Mark .wpress files
+			foreach ( $result['objects'] as &$obj ) {
+				$k = isset( $obj['key'] ) ? (string) $obj['key'] : '';
+				$obj['is_backup'] = (bool) preg_match( '/\.wpress$/i', $k );
+			}
+			unset( $obj );
+
+			wp_send_json_success( array( 'path' => $path, 'result' => $result ) );
+		} catch ( Exception $e ) {
+			wp_send_json_error( array( 'errors' => array( $e->getMessage() ) ) );
+		}
+	}
+
+	/**
+	 * AJAX: Download a selected S3 object (.wpress) to local backups folder.
+	 */
+	public static function download_from_s3() {
+		if ( ! current_user_can( 'import' ) ) {
+			wp_send_json_error( array( 'errors' => array( __( 'You are not allowed to perform this action.', AI1WM_PLUGIN_NAME ) ) ) );
+		}
+
+		$params     = stripslashes_deep( $_POST );
+		$secret_key = isset( $params['secret_key'] ) ? trim( $params['secret_key'] ) : null;
+		$key        = isset( $params['key'] ) ? ltrim( str_replace( '\\', '/', $params['key'] ), '/' ) : '';
+
+		try {
+			ai1wm_verify_secret_key( $secret_key );
+		} catch ( Ai1wm_Not_Valid_Secret_Key_Exception $e ) {
+			wp_send_json_error( array( 'errors' => array( $e->getMessage() ) ) );
+		}
+
+		if ( $key === '' ) {
+			wp_send_json_error( array( 'errors' => array( __( 'Missing object key.', AI1WM_PLUGIN_NAME ) ) ) );
+		}
+
+		if ( ! preg_match( '/\.wpress$/i', $key ) ) {
+			wp_send_json_error( array( 'errors' => array( __( 'Only .wpress files can be downloaded.', AI1WM_PLUGIN_NAME ) ) ) );
+		}
+
+		// Ensure backups folder exists and writable
+		if ( ! is_dir( AI1WM_BACKUPS_PATH ) ) {
+			if ( ! Ai1wm_Directory::create( AI1WM_BACKUPS_PATH ) ) {
+				wp_send_json_error( array( 'errors' => array( sprintf( __( 'Unable to create backups folder: %s', AI1WM_PLUGIN_NAME ), AI1WM_BACKUPS_PATH ) ) ) );
+			}
+		}
+
+		if ( ! is_writable( AI1WM_BACKUPS_PATH ) ) {
+			wp_send_json_error( array( 'errors' => array( sprintf( __( 'Backups folder is not writable: %s', AI1WM_PLUGIN_NAME ), AI1WM_BACKUPS_PATH ) ) ) );
+		}
+
+		$filename   = basename( $key );
+		$target     = AI1WM_BACKUPS_PATH . DIRECTORY_SEPARATOR . $filename;
+
+		// If exists, add suffix to avoid overwrite
+		if ( file_exists( $target ) ) {
+			$base = preg_replace( '/\.wpress$/i', '', $filename );
+			$i    = 1;
+			do {
+				$alt = sprintf( '%s-(%d).wpress', $base, $i );
+				$target = AI1WM_BACKUPS_PATH . DIRECTORY_SEPARATOR . $alt;
+				$i++;
+			} while ( file_exists( $target ) && $i < 1000 );
+		}
+
+		try {
+			$client = new Ai1wm_S3_Client( Ai1wm_S3_Settings::get() );
+			$client->download_to_path( $key, $target );
+
+			$info = array(
+				'filename' => basename( $target ),
+				'path'     => $target,
+				'size'     => is_readable( $target ) ? filesize( $target ) : 0,
+				'mtime'    => file_exists( $target ) ? filemtime( $target ) : time(),
+			);
+
+			wp_send_json_success( array( 'backup' => $info ) );
+		} catch ( Exception $e ) {
+			// Remove partial file on failure
+			if ( file_exists( $target ) ) {
+				@unlink( $target );
+			}
+			wp_send_json_error( array( 'errors' => array( $e->getMessage() ) ) );
+		}
+	}
 }

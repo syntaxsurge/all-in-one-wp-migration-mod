@@ -896,6 +896,8 @@ class Ai1wm_Main_Controller {
 			unset( $activity_status );
 		}
 
+		$ai1wm_s3_settings = Ai1wm_S3_Settings::get();
+
 		wp_localize_script( 'ai1wm_backups_s3', 'ai1wm_s3', array(
 			'ajax'       => array(
 				'url' => wp_make_link_relative( admin_url( 'admin-ajax.php?action=ai1wm_s3_upload' ) ),
@@ -903,6 +905,12 @@ class Ai1wm_Main_Controller {
 			'secret_key' => get_option( AI1WM_SECRET_KEY ),
 			'configured' => Ai1wm_S3_Settings::is_configured(),
 			'statuses'   => $ai1wm_s3_statuses,
+			'browse'     => array(
+				'list_url'     => wp_make_link_relative( admin_url( 'admin-ajax.php?action=ai1wm_s3_list' ) ),
+				'download_url' => wp_make_link_relative( admin_url( 'admin-ajax.php?action=ai1wm_s3_download' ) ),
+				'bucket'       => isset( $ai1wm_s3_settings['bucket'] ) ? $ai1wm_s3_settings['bucket'] : '',
+				'prefix'       => isset( $ai1wm_s3_settings['prefix'] ) ? $ai1wm_s3_settings['prefix'] : '',
+			),
 			'strings'    => array(
 				'not_configured' => __( 'Configure S3 storage to enable uploads.', AI1WM_PLUGIN_NAME ),
 				'saving_required'=> __( 'Save your S3 settings before copying a backup.', AI1WM_PLUGIN_NAME ),
@@ -924,6 +932,22 @@ class Ai1wm_Main_Controller {
 				'config_import_success' => __( 'Configuration applied. Review and save to persist.', AI1WM_PLUGIN_NAME ),
 				'config_import_error'   => __( 'Paste configuration JSON before applying.', AI1WM_PLUGIN_NAME ),
 				'config_import_invalid' => __( 'Configuration format is invalid. Please check the JSON.', AI1WM_PLUGIN_NAME ),
+				// Browser strings
+				'browse_title'   => __( 'Browse S3 Backups', AI1WM_PLUGIN_NAME ),
+				'browse_desc'    => __( 'Select a backup from your S3 bucket to copy into this site\'s backups folder for import.', AI1WM_PLUGIN_NAME ),
+				'current_path'   => __( 'Current path:', AI1WM_PLUGIN_NAME ),
+				'btn_up'         => __( 'Up', AI1WM_PLUGIN_NAME ),
+				'btn_refresh'    => __( 'Refresh', AI1WM_PLUGIN_NAME ),
+				'col_name'       => __( 'Name', AI1WM_PLUGIN_NAME ),
+				'col_size'       => __( 'Size', AI1WM_PLUGIN_NAME ),
+				'col_modified'   => __( 'Last Modified', AI1WM_PLUGIN_NAME ),
+				'col_action'     => __( 'Action', AI1WM_PLUGIN_NAME ),
+				'empty_folder'   => __( 'This folder is empty.', AI1WM_PLUGIN_NAME ),
+				'load_more'      => __( 'Load more…', AI1WM_PLUGIN_NAME ),
+				'copy_here'      => __( 'Copy to Backups', AI1WM_PLUGIN_NAME ),
+				'listing_error'  => __( 'Unable to list objects from S3.', AI1WM_PLUGIN_NAME ),
+				'copy_success'   => __( 'Downloaded to backups: %s', AI1WM_PLUGIN_NAME ),
+				'copy_failed'    => __( 'Download failed: %s', AI1WM_PLUGIN_NAME ),
 				'col_backup'     => __( 'Backup', AI1WM_PLUGIN_NAME ),
 				'col_destination'=> __( 'Destination', AI1WM_PLUGIN_NAME ),
 				'col_status'     => __( 'Status', AI1WM_PLUGIN_NAME ),
@@ -1058,6 +1082,8 @@ class Ai1wm_Main_Controller {
 		add_action( 'wp_ajax_ai1wm_status', 'Ai1wm_Status_Controller::status' );
 		add_action( 'wp_ajax_ai1wm_backups', 'Ai1wm_Backups_Controller::delete' );
 		add_action( 'wp_ajax_ai1wm_s3_upload', 'Ai1wm_Backups_Controller::upload_to_s3' );
+		add_action( 'wp_ajax_ai1wm_s3_list', 'Ai1wm_Backups_Controller::list_s3_objects' );
+		add_action( 'wp_ajax_ai1wm_s3_download', 'Ai1wm_Backups_Controller::download_from_s3' );
 		add_action( 'wp_ajax_ai1wm_feedback', 'Ai1wm_Feedback_Controller::feedback' );
 		add_action( 'wp_ajax_ai1wm_report', 'Ai1wm_Report_Controller::report' );
 		add_action( 'admin_post_ai1wm_save_s3_settings', 'Ai1wm_Backups_Controller::save_s3_settings' );

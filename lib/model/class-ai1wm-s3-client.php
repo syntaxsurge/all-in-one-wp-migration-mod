@@ -671,6 +671,142 @@ class Ai1wm_S3_Client {
 	}
 
 	/**
+	 * List objects and common prefixes for a given prefix using ListObjectsV2.
+	 *
+	 * @param  string $subprefix            Sub-prefix relative to configured prefix.
+	 * @param  string $continuation_token   Continuation token for pagination.
+	 * @param  int    $max_keys             Max keys to return (1-1000).
+	 * @return array                        Array with 'objects', 'prefixes', 'is_truncated', 'next_token'.
+	 */
+	public function list_objects( $subprefix = '', $continuation_token = '', $max_keys = 200 ) {
+		$subprefix = ltrim( str_replace( '\\', '/', (string) $subprefix ), '/' );
+		$prefix    = $this->prefix . $subprefix;
+		$prefix    = $this->trim_double_slashes( $prefix );
+
+		$max_keys = (int) $max_keys;
+		if ( $max_keys <= 0 || $max_keys > 1000 ) {
+			$max_keys = 200;
+		}
+
+		$query = array(
+			'list-type' => '2',
+			'delimiter' => '/',
+			'max-keys'  => (string) $max_keys,
+		);
+
+		if ( $prefix !== '' ) {
+			$query['prefix'] = $prefix;
+		}
+
+		$continuation_token = (string) $continuation_token;
+		if ( $continuation_token !== '' ) {
+			$query['continuation-token'] = $continuation_token;
+		}
+
+		$response = $this->signed_request( 'GET', '', $query );
+		$this->guard_response( $response, __( 'Failed to list objects from S3.', AI1WM_PLUGIN_NAME ) );
+
+		$body = wp_remote_retrieve_body( $response );
+		if ( ! $body ) {
+			return array(
+				'objects'       => array(),
+				'prefixes'      => array(),
+				'is_truncated'  => false,
+				'next_token'    => '',
+			);
+		}
+
+		$xml = @simplexml_load_string( $body );
+		if ( ! $xml ) {
+			throw new Ai1wm_S3_Exception( __( 'Failed to parse S3 response.', AI1WM_PLUGIN_NAME ) );
+		}
+
+		$objects      = array();
+		$common       = array();
+		$is_truncated = (string) ( isset( $xml->IsTruncated ) ? $xml->IsTruncated : '' );
+		$next_token   = (string) ( isset( $xml->NextContinuationToken ) ? $xml->NextContinuationToken : '' );
+
+		if ( isset( $xml->Contents ) ) {
+			foreach ( $xml->Contents as $content ) {
+				$key  = isset( $content->Key ) ? (string) $content->Key : '';
+				$size = isset( $content->Size ) ? (int) $content->Size : 0;
+				$lm   = isset( $content->LastModified ) ? (string) $content->LastModified : '';
+
+				if ( $key === '' ) {
+					continue;
+				}
+
+				// Convert to relative to configured prefix
+				$relative_key = $key;
+				if ( $this->prefix !== '' && strpos( $key, $this->prefix ) === 0 ) {
+					$relative_key = ltrim( substr( $key, strlen( $this->prefix ) ), '/' );
+				}
+
+				$objects[] = array(
+					'key'           => $relative_key,
+					'name'          => basename( $relative_key ),
+					'size'          => $size,
+					'last_modified' => $lm,
+				);
+			}
+		}
+
+		if ( isset( $xml->CommonPrefixes ) ) {
+			foreach ( $xml->CommonPrefixes as $prefix_node ) {
+				$pk = isset( $prefix_node->Prefix ) ? (string) $prefix_node->Prefix : '';
+				if ( $pk === '' ) {
+					continue;
+				}
+				$relative = $pk;
+				if ( $this->prefix !== '' && strpos( $pk, $this->prefix ) === 0 ) {
+					$relative = ltrim( substr( $pk, strlen( $this->prefix ) ), '/' );
+				}
+				$relative = rtrim( $relative, '/' );
+				if ( $relative === '' ) {
+					continue;
+				}
+				$common[] = array(
+					'prefix' => $relative,
+					'name'   => basename( $relative ),
+				);
+			}
+		}
+
+		return array(
+			'objects'       => $objects,
+			'prefixes'      => $common,
+			'is_truncated'  => ( $is_truncated === 'true' || $is_truncated === '1' ),
+			'next_token'    => $next_token,
+		);
+	}
+
+	/**
+	 * Download an object to a local file path.
+	 *
+	 * @param  string $relative_key   Object key relative to configured prefix.
+	 * @param  string $destination    Absolute path to save file.
+	 * @return void
+	 */
+	public function download_to_path( $relative_key, $destination ) {
+		$relative_key = ltrim( str_replace( '\\', '/', (string) $relative_key ), '/' );
+		$remote_key   = $this->prefix . $relative_key;
+		$remote_key   = $this->trim_double_slashes( $remote_key );
+
+		$request = $this->prepare_signed_request( 'GET', $remote_key );
+
+		$args = array(
+			'headers'  => $request['headers'],
+			'method'   => 'GET',
+			'timeout'  => 600,
+			'stream'   => true,
+			'filename' => $destination,
+		);
+
+		$response = wp_remote_request( $request['url'], $args );
+		$this->guard_response( $response, __( 'Failed to download object from S3.', AI1WM_PLUGIN_NAME ) );
+	}
+
+	/**
 	 * Validate status code and throw descriptive error.
 	 *
 	 * @param array|WP_Error $response Response payload.

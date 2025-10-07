@@ -125,4 +125,55 @@ $ai1wm_s3_concurrency     = isset( $s3_concurrency ) ? (int) $s3_concurrency : A
 		);
 		?>
 	</p>
+
+	<div class="ai1wm-field-set ai1wm-s3-browser" id="ai1wm-s3-browser" data-configured="<?php echo esc_attr( $ai1wm_s3_configured_attr ); ?>">
+		<div class="ai1wm-backups-s3__heading">
+			<h2>
+				<i class="ai1wm-icon-cloud"></i>
+				<?php _e( 'Browse S3 Backups', AI1WM_PLUGIN_NAME ); ?>
+			</h2>
+			<p class="ai1wm-backups-s3__description">
+				<?php _e( 'Select a backup from your S3 bucket to copy into this site\'s backups folder for import.', AI1WM_PLUGIN_NAME ); ?>
+			</p>
+		</div>
+
+		<?php if ( ! $s3_configured ) : ?>
+			<div class="ai1wm-message ai1wm-blue-message">
+				<p><?php _e( 'Save your S3 settings above to enable browsing.', AI1WM_PLUGIN_NAME ); ?></p>
+			</div>
+		<?php endif; ?>
+
+		<div class="ai1wm-s3-browser-controls" aria-live="polite">
+			<strong><?php _e( 'Current path:', AI1WM_PLUGIN_NAME ); ?></strong>
+			<code id="ai1wm-s3-current-path">/</code>
+			<div class="ai1wm-buttons" style="margin-top:6px;">
+				<button type="button" class="ai1wm-button-gray" id="ai1wm-s3-up" aria-label="<?php esc_attr_e( 'Up', AI1WM_PLUGIN_NAME ); ?>">
+					<i class="ai1wm-icon-up"></i> <?php _e( 'Up', AI1WM_PLUGIN_NAME ); ?>
+				</button>
+				<button type="button" class="ai1wm-button-gray" id="ai1wm-s3-refresh" aria-label="<?php esc_attr_e( 'Refresh', AI1WM_PLUGIN_NAME ); ?>">
+					<i class="ai1wm-icon-refresh"></i> <?php _e( 'Refresh', AI1WM_PLUGIN_NAME ); ?>
+				</button>
+			</div>
+		</div>
+
+		<table class="ai1wm-backups ai1wm-s3-list" id="ai1wm-s3-list" aria-describedby="ai1wm-s3-current-path">
+			<thead>
+				<tr>
+					<th><?php _e( 'Name', AI1WM_PLUGIN_NAME ); ?></th>
+					<th><?php _e( 'Size', AI1WM_PLUGIN_NAME ); ?></th>
+					<th><?php _e( 'Last Modified', AI1WM_PLUGIN_NAME ); ?></th>
+					<th><?php _e( 'Action', AI1WM_PLUGIN_NAME ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr class="ai1wm-s3-empty"><td colspan="4"><?php _e( 'This folder is empty.', AI1WM_PLUGIN_NAME ); ?></td></tr>
+			</tbody>
+		</table>
+
+		<div class="ai1wm-buttons" id="ai1wm-s3-load-more-wrap" style="display:none;">
+			<button type="button" class="ai1wm-button-gray" id="ai1wm-s3-load-more"><?php _e( 'Load more…', AI1WM_PLUGIN_NAME ); ?></button>
+		</div>
+
+		<p class="ai1wm-s3-browser-feedback" id="ai1wm-s3-feedback" aria-live="polite"></p>
+	</div>
 </div>
