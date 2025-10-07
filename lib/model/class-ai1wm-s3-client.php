@@ -107,7 +107,7 @@ class Ai1wm_S3_Client {
 	 * @param  integer $concurrency  Number of concurrent transfers.
 	 * @throws Ai1wm_S3_Exception When upload fails.
 	 */
-	public function upload( $file_path, $remote_key, $chunk_size = AI1WM_S3_MULTIPART_CHUNK_SIZE, $concurrency = AI1WM_S3_CONCURRENCY ) {
+    public function upload( $file_path, $remote_key, $chunk_size = AI1WM_S3_MULTIPART_CHUNK_SIZE, $concurrency = AI1WM_S3_CONCURRENCY, $progress_cb = null ) {
 		if ( ! is_readable( $file_path ) ) {
 			throw new Ai1wm_S3_Exception( sprintf( __( 'Backup file %s is not readable.', AI1WM_PLUGIN_NAME ), basename( $file_path ) ) );
 		}
@@ -131,11 +131,11 @@ class Ai1wm_S3_Client {
 		try {
 			$upload_id = $this->create_multipart_upload( $remote_key );
 
-			if ( $concurrency > 1 && function_exists( 'curl_multi_init' ) ) {
-				$parts = $this->upload_parts_concurrently( $handle, $remote_key, $upload_id, $chunk_size, $concurrency );
-			} else {
-				$parts = $this->upload_parts_sequentially( $handle, $remote_key, $upload_id, $chunk_size );
-			}
+            if ( $concurrency > 1 && function_exists( 'curl_multi_init' ) ) {
+                $parts = $this->upload_parts_concurrently( $handle, $remote_key, $upload_id, $chunk_size, $concurrency, $progress_cb );
+            } else {
+                $parts = $this->upload_parts_sequentially( $handle, $remote_key, $upload_id, $chunk_size, $progress_cb );
+            }
 
 			if ( empty( $parts ) ) {
 				throw new Ai1wm_S3_Exception( __( 'Backup file is empty.', AI1WM_PLUGIN_NAME ) );
@@ -167,7 +167,7 @@ class Ai1wm_S3_Client {
 	 *
 	 * @return array
 	 */
-	private function upload_parts_sequentially( $handle, $remote_key, $upload_id, $chunk_size ) {
+    private function upload_parts_sequentially( $handle, $remote_key, $upload_id, $chunk_size, $progress_cb = null ) {
 		$parts = array();
 		$part_number = 1;
 
@@ -182,7 +182,11 @@ class Ai1wm_S3_Client {
 				continue;
 			}
 
-			$etag = $this->upload_part_with_retry( $remote_key, $upload_id, $part_number, $chunk );
+            $etag = $this->upload_part_with_retry( $remote_key, $upload_id, $part_number, $chunk );
+
+            if ( is_callable( $progress_cb ) ) {
+                try { call_user_func( $progress_cb, strlen( $chunk ) ); } catch ( Exception $ignored ) {}
+            }
 
 			$parts[] = array(
 				'PartNumber' => $part_number,
@@ -206,7 +210,7 @@ class Ai1wm_S3_Client {
 	 *
 	 * @return array
 	 */
-	private function upload_parts_concurrently( $handle, $remote_key, $upload_id, $chunk_size, $concurrency ) {
+    private function upload_parts_concurrently( $handle, $remote_key, $upload_id, $chunk_size, $concurrency, $progress_cb = null ) {
 		$multi = curl_multi_init();
 		if ( false === $multi ) {
 			return $this->upload_parts_sequentially( $handle, $remote_key, $upload_id, $chunk_size );
@@ -298,8 +302,8 @@ class Ai1wm_S3_Client {
 						continue;
 					}
 
-					$etag = $this->extract_etag_from_headers( $headers_raw );
-					if ( empty( $etag ) ) {
+                    $etag = $this->extract_etag_from_headers( $headers_raw );
+                    if ( empty( $etag ) ) {
 						if ( $job['attempt'] >= AI1WM_S3_MAX_RETRIES ) {
 							throw new Ai1wm_S3_Exception( sprintf( __( 'Multipart upload failed for part %d: missing ETag.', AI1WM_PLUGIN_NAME ), (int) $job['part'] ) );
 						}
@@ -309,11 +313,15 @@ class Ai1wm_S3_Client {
 						continue;
 					}
 
-					$completed_parts[] = array(
-						'PartNumber' => (int) $job['part'],
-						'ETag'       => $etag,
-					);
-					unset( $job['chunk'] );
+                    $completed_parts[] = array(
+                        'PartNumber' => (int) $job['part'],
+                        'ETag'       => $etag,
+                    );
+                    if ( is_callable( $progress_cb ) && isset( $job['chunk'] ) ) {
+                        $delta = strlen( $job['chunk'] );
+                        try { call_user_func( $progress_cb, $delta ); } catch ( Exception $ignored ) {}
+                    }
+                    unset( $job['chunk'] );
 				}
 
 				if ( $running ) {

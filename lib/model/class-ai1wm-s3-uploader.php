@@ -139,16 +139,35 @@ class Ai1wm_S3_Uploader {
 		$remote_url = Ai1wm_S3_Settings::object_url( $remote_key, $settings );
 
 		try {
-			Ai1wm_S3_Status::update(
-				$archive,
-				'in_progress',
-				sprintf( __( 'Uploading %s to S3...', AI1WM_PLUGIN_NAME ), $remote_key ),
-				$remote_key,
-				$remote_url
-			);
+            Ai1wm_S3_Status::update(
+                $archive,
+                'in_progress',
+                sprintf( __( 'Uploading %s to S3...', AI1WM_PLUGIN_NAME ), $remote_key ),
+                $remote_key,
+                $remote_url,
+                array(
+                    'bytes_total' => @filesize( $file ),
+                    'bytes_done'  => 0,
+                )
+            );
 
-			$client = new Ai1wm_S3_Client( $settings );
-			$client->upload( $file, $archive, AI1WM_S3_MULTIPART_CHUNK_SIZE, AI1WM_S3_CONCURRENCY );
+            $client = new Ai1wm_S3_Client( $settings );
+            $total   = @filesize( $file );
+            $uploaded = 0;
+            $progress = function ( $delta ) use ( $archive, $remote_key, $remote_url, $total, &$uploaded ) {
+                $uploaded += (int) $delta;
+                $pct = ( $total > 0 ) ? round( ( $uploaded / $total ) * 100 ) : 0;
+                $msg = $total > 0
+                    ? sprintf( __( 'Uploading to %1$s... %2$d%%', AI1WM_PLUGIN_NAME ), $remote_key, (int) $pct )
+                    : sprintf( __( 'Uploading to %s...', AI1WM_PLUGIN_NAME ), $remote_key );
+
+                Ai1wm_S3_Status::update( $archive, 'in_progress', $msg, $remote_key, $remote_url, array(
+                    'bytes_total' => (int) $total,
+                    'bytes_done'  => (int) $uploaded,
+                ) );
+            };
+
+            $client->upload( $file, $archive, AI1WM_S3_MULTIPART_CHUNK_SIZE, AI1WM_S3_CONCURRENCY, $progress );
 
 			Ai1wm_S3_Status::update(
 				$archive,

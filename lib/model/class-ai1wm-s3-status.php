@@ -57,9 +57,9 @@ class Ai1wm_S3_Status {
 	 * @param string $message    Human readable message.
 	 * @param string $remote_key Remote object key.
 	 */
-	public static function update( $archive, $state, $message = '', $remote_key = null, $remote_url = null ) {
-		$archive = self::normalize_archive( $archive );
-		$statuses = self::all();
+    public static function update( $archive, $state, $message = '', $remote_key = null, $remote_url = null, $extra = array() ) {
+        $archive = self::normalize_archive( $archive );
+        $statuses = self::all();
 
 		$current = isset( $statuses[ $archive ] ) ? self::prepare_status( $archive, $statuses[ $archive ] ) : self::defaults();
 		$remote_key = is_null( $remote_key ) ? self::array_get( $current, 'remote_key' ) : $remote_key;
@@ -70,13 +70,24 @@ class Ai1wm_S3_Status {
 		}
 		$remote_url = (string) $remote_url;
 
-		$statuses[ $archive ] = array(
-			'state'      => $state,
-			'message'    => $message,
-			'remote_key' => $remote_key,
-			'remote_url' => $remote_url,
-			'updated_at' => time(),
-		);
+        $entry = array(
+            'state'      => $state,
+            'message'    => $message,
+            'remote_key' => $remote_key,
+            'remote_url' => $remote_url,
+            'updated_at' => time(),
+        );
+
+        if ( is_array( $extra ) ) {
+            if ( isset( $extra['bytes_total'] ) ) {
+                $entry['bytes_total'] = (int) $extra['bytes_total'];
+            }
+            if ( isset( $extra['bytes_done'] ) ) {
+                $entry['bytes_done'] = (int) $extra['bytes_done'];
+            }
+        }
+
+        $statuses[ $archive ] = array_merge( $current, $entry );
 
 		update_option( AI1WM_S3_STATUS_OPTION, $statuses, false );
 	}
@@ -115,7 +126,7 @@ class Ai1wm_S3_Status {
 	 * @param  array  $status  Stored status.
 	 * @return array
 	 */
-	private static function prepare_status( $archive, $status ) {
+    private static function prepare_status( $archive, $status ) {
 		if ( ! is_array( $status ) ) {
 			$status = array();
 		}
@@ -126,9 +137,11 @@ class Ai1wm_S3_Status {
 			$status['remote_url'] = Ai1wm_S3_Settings::object_url( $status['remote_key'] );
 		}
 
-		$status['remote_key'] = (string) $status['remote_key'];
-		$status['remote_url'] = (string) $status['remote_url'];
-		$status['message']    = (string) $status['message'];
+        $status['remote_key']  = (string) $status['remote_key'];
+        $status['remote_url']  = (string) $status['remote_url'];
+        $status['message']     = (string) $status['message'];
+        $status['bytes_total'] = (int) ( isset( $status['bytes_total'] ) ? $status['bytes_total'] : 0 );
+        $status['bytes_done']  = (int) ( isset( $status['bytes_done'] ) ? $status['bytes_done'] : 0 );
 
 		return $status;
 	}
@@ -138,15 +151,17 @@ class Ai1wm_S3_Status {
 	 *
 	 * @return array
 	 */
-	private static function defaults() {
-		return array(
-			'state'      => '',
-			'message'    => '',
-			'remote_key' => '',
-			'remote_url' => '',
-			'updated_at' => 0,
-		);
-	}
+    private static function defaults() {
+        return array(
+            'state'      => '',
+            'message'    => '',
+            'remote_key' => '',
+            'remote_url' => '',
+            'updated_at' => 0,
+            'bytes_total'=> 0,
+            'bytes_done' => 0,
+        );
+    }
 
 	/**
 	 * Ensure archive references are consistent.
