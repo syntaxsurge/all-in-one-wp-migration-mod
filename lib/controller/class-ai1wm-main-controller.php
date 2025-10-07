@@ -818,6 +818,19 @@ class Ai1wm_Main_Controller {
 			. 'body .ai1wm-s3-config-feedback.ai1wm-success { color:#1a7f37; }'
 			. 'body #ai1wm-s3-settings .ai1wm-message { margin-top:0; }';
 
+
+		// Extend styles with progress bar and toast/snackbar
+		$custom_css .=
+			'body .ai1wm-progress{position:relative;height:8px;background:#e5e5e5;border-radius:5px;overflow:hidden;}'
+			. 'body .ai1wm-progress__bar{height:100%;background:#00aff0;width:0%;transition:width .3s ease;}'
+			. 'body .ai1wm-progress.ai1wm-progress--indeterminate .ai1wm-progress__bar{position:absolute;width:40%;animation:ai1wm-progress-ind 1.2s infinite;}'
+			. '@keyframes ai1wm-progress-ind{0%{left:-40%;}100%{left:100%;}}'
+			. 'body #ai1wm-toast{position:fixed;right:20px;bottom:20px;z-index:100003;display:none;min-width:240px;max-width:420px;background:#333;color:#fff;padding:12px 16px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.2)}'
+			. 'body #ai1wm-toast.ai1wm-toast--show{display:block}'
+			. 'body #ai1wm-toast.ai1wm-toast--success{background:#1a7f37}'
+			. 'body #ai1wm-toast.ai1wm-toast--error{background:#d63638}'
+			. 'body #ai1wm-toast.ai1wm-toast--info{background:#333}';
+
 		wp_add_inline_style( 'ai1wm_backups', $custom_css );
 
 		wp_enqueue_script(
