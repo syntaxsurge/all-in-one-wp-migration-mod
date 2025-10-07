@@ -826,14 +826,17 @@ class Ai1wm_Main_Controller {
 			. 'body .ai1wm-progress.ai1wm-progress--indeterminate .ai1wm-progress__bar{position:absolute;width:40%;animation:ai1wm-progress-ind 1.2s infinite;}'
 			. '@keyframes ai1wm-progress-ind{0%{left:-40%;}100%{left:100%;}}'
 			. 'body #ai1wm-toasts{position:fixed;right:20px;bottom:20px;z-index:100003;display:flex;flex-direction:column;gap:8px;align-items:flex-end;}'
-			. 'body .ai1wm-toast-item{min-width:240px;max-width:420px;background:#333;color:#fff;padding:12px 16px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.2);opacity:0;transform:translateY(10px);animation:ai1wm-toast-in .15s ease forwards}'
+			. 'body .ai1wm-toast-item{position:relative;min-width:240px;max-width:420px;background:#333;color:#fff;padding:12px 40px 12px 14px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.2);opacity:0;transform:translateY(10px);animation:ai1wm-toast-in .15s ease forwards}'
 			. 'body .ai1wm-toast-item.ai1wm-toast--success{background:#1a7f37}'
 			. 'body .ai1wm-toast-item.ai1wm-toast--error{background:#d63638}'
 			. 'body .ai1wm-toast-item.ai1wm-toast--info{background:#333}'
 			. '@keyframes ai1wm-toast-in{to{opacity:1;transform:translateY(0)}}'
+			. 'body .ai1wm-toast-close{position:absolute;top:6px;right:8px;background:transparent;border:0;color:#fff;opacity:.85;cursor:pointer;font-size:16px;line-height:1;padding:4px} '
+			. 'body .ai1wm-toast-close:hover{opacity:1}'
 			. 'body .ai1wm-s3-prog-text{margin-top:4px;font-size:12px;color:#6d6d6d}'
 			. 'body .ai1wm-upload-progress{margin-top:6px}'
-			. 'body .ai1wm-upload-progress .ai1wm-upload-label{margin-top:4px;font-size:12px;color:#6d6d6d}';
+			. 'body .ai1wm-upload-progress .ai1wm-upload-label{margin-top:4px;font-size:12px;color:#6d6d6d}'
+			. 'body .ai1wm-upload-progress .ai1wm-upload-percent{margin-top:2px;font-size:12px;color:#6d6d6d}';
 
 		wp_add_inline_style( 'ai1wm_backups', $custom_css );
 
