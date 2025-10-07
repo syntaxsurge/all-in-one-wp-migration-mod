@@ -111,6 +111,7 @@ class Ai1wm_Main_Controller {
 
 		// Process S3 upload jobs
 		add_action( AI1WM_S3_CRON_HOOK, array( 'Ai1wm_S3_Uploader', 'run' ) );
+		add_action( AI1WM_S3_DL_CRON_HOOK, array( 'Ai1wm_S3_Downloader', 'run' ), 10, 2 );
 	}
 
 	/**
@@ -908,6 +909,8 @@ class Ai1wm_Main_Controller {
 			'browse'     => array(
 				'list_url'     => wp_make_link_relative( admin_url( 'admin-ajax.php?action=ai1wm_s3_list' ) ),
 				'download_url' => wp_make_link_relative( admin_url( 'admin-ajax.php?action=ai1wm_s3_download' ) ),
+				'status_url'   => wp_make_link_relative( admin_url( 'admin-ajax.php?action=ai1wm_s3_download_status' ) ),
+				'cancel_url'   => wp_make_link_relative( admin_url( 'admin-ajax.php?action=ai1wm_s3_download_cancel' ) ),
 				'bucket'       => isset( $ai1wm_s3_settings['bucket'] ) ? $ai1wm_s3_settings['bucket'] : '',
 				'prefix'       => isset( $ai1wm_s3_settings['prefix'] ) ? $ai1wm_s3_settings['prefix'] : '',
 			),
@@ -948,6 +951,11 @@ class Ai1wm_Main_Controller {
 				'listing_error'  => __( 'Unable to list objects from S3.', AI1WM_PLUGIN_NAME ),
 				'copy_success'   => __( 'Downloaded to backups: %s', AI1WM_PLUGIN_NAME ),
 				'copy_failed'    => __( 'Download failed: %s', AI1WM_PLUGIN_NAME ),
+				'copy_started'   => __( 'Download started...', AI1WM_PLUGIN_NAME ),
+				'cancel'         => __( 'Cancel', AI1WM_PLUGIN_NAME ),
+				'cancelled'      => __( 'Download cancelled.', AI1WM_PLUGIN_NAME ),
+				'progress'       => __( 'Downloading: %1$s of %2$s', AI1WM_PLUGIN_NAME ),
+				'refreshing'     => __( 'Refreshing backups...', AI1WM_PLUGIN_NAME ),
 				'col_backup'     => __( 'Backup', AI1WM_PLUGIN_NAME ),
 				'col_destination'=> __( 'Destination', AI1WM_PLUGIN_NAME ),
 				'col_status'     => __( 'Status', AI1WM_PLUGIN_NAME ),
@@ -1084,6 +1092,8 @@ class Ai1wm_Main_Controller {
 		add_action( 'wp_ajax_ai1wm_s3_upload', 'Ai1wm_Backups_Controller::upload_to_s3' );
 		add_action( 'wp_ajax_ai1wm_s3_list', 'Ai1wm_Backups_Controller::list_s3_objects' );
 		add_action( 'wp_ajax_ai1wm_s3_download', 'Ai1wm_Backups_Controller::download_from_s3' );
+		add_action( 'wp_ajax_ai1wm_s3_download_status', 'Ai1wm_Backups_Controller::download_status' );
+		add_action( 'wp_ajax_ai1wm_s3_download_cancel', 'Ai1wm_Backups_Controller::download_cancel' );
 		add_action( 'wp_ajax_ai1wm_feedback', 'Ai1wm_Feedback_Controller::feedback' );
 		add_action( 'wp_ajax_ai1wm_report', 'Ai1wm_Report_Controller::report' );
 		add_action( 'admin_post_ai1wm_save_s3_settings', 'Ai1wm_Backups_Controller::save_s3_settings' );

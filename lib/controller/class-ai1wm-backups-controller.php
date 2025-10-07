@@ -248,23 +248,59 @@ class Ai1wm_Backups_Controller {
 		}
 
 		try {
-			$client = new Ai1wm_S3_Client( Ai1wm_S3_Settings::get() );
-			$client->download_to_path( $key, $target );
+			// Switch to background job using downloader
+			Ai1wm_S3_Downloader::dispatch( $key, basename( $target ) );
 
-			$info = array(
-				'filename' => basename( $target ),
-				'path'     => $target,
-				'size'     => is_readable( $target ) ? filesize( $target ) : 0,
-				'mtime'    => file_exists( $target ) ? filemtime( $target ) : time(),
-			);
-
-			wp_send_json_success( array( 'backup' => $info ) );
+			$status = Ai1wm_S3_Download_Status::get( $key );
+			wp_send_json_success( array( 'job' => $status ) );
 		} catch ( Exception $e ) {
-			// Remove partial file on failure
-			if ( file_exists( $target ) ) {
-				@unlink( $target );
-			}
 			wp_send_json_error( array( 'errors' => array( $e->getMessage() ) ) );
 		}
+	}
+
+	/**
+	 * AJAX: Get status for a download job (by key).
+	 */
+	public static function download_status() {
+		if ( ! current_user_can( 'import' ) ) {
+			wp_send_json_error( array( 'errors' => array( __( 'You are not allowed to perform this action.', AI1WM_PLUGIN_NAME ) ) ) );
+		}
+
+		$params = stripslashes_deep( $_GET );
+		$key    = isset( $params['key'] ) ? ltrim( str_replace( '\\', '/', $params['key'] ), '/' ) : '';
+
+		if ( $key === '' ) {
+			wp_send_json_error( array( 'errors' => array( __( 'Missing object key.', AI1WM_PLUGIN_NAME ) ) ) );
+		}
+
+		$status = Ai1wm_S3_Download_Status::get( $key );
+		wp_send_json_success( array( 'job' => $status ) );
+	}
+
+	/**
+	 * AJAX: Cancel a background download job.
+	 */
+	public static function download_cancel() {
+		if ( ! current_user_can( 'import' ) ) {
+			wp_send_json_error( array( 'errors' => array( __( 'You are not allowed to perform this action.', AI1WM_PLUGIN_NAME ) ) ) );
+		}
+
+		$params     = stripslashes_deep( $_POST );
+		$secret_key = isset( $params['secret_key'] ) ? trim( $params['secret_key'] ) : null;
+		$key        = isset( $params['key'] ) ? ltrim( str_replace( '\\', '/', $params['key'] ), '/' ) : '';
+
+		try {
+			ai1wm_verify_secret_key( $secret_key );
+		} catch ( Ai1wm_Not_Valid_Secret_Key_Exception $e ) {
+			wp_send_json_error( array( 'errors' => array( $e->getMessage() ) ) );
+		}
+
+		if ( $key === '' ) {
+			wp_send_json_error( array( 'errors' => array( __( 'Missing object key.', AI1WM_PLUGIN_NAME ) ) ) );
+		}
+
+		Ai1wm_S3_Downloader::cancel( $key );
+		$status = Ai1wm_S3_Download_Status::get( $key );
+		wp_send_json_success( array( 'job' => $status ) );
 	}
 }

@@ -211,6 +211,14 @@ require_once AI1WM_MODEL_PATH .
 			DIRECTORY_SEPARATOR .
 			'class-ai1wm-s3-uploader.php';
 
+require_once AI1WM_MODEL_PATH .
+			DIRECTORY_SEPARATOR .
+			'class-ai1wm-s3-download-status.php';
+
+require_once AI1WM_MODEL_PATH .
+			DIRECTORY_SEPARATOR .
+			'class-ai1wm-s3-downloader.php';
+
 require_once AI1WM_CONTROLLER_PATH .
 			DIRECTORY_SEPARATOR .
 			'class-ai1wm-main-controller.php';

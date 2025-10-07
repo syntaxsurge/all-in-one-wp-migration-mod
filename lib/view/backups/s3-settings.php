@@ -153,6 +153,8 @@ $ai1wm_s3_concurrency     = isset( $s3_concurrency ) ? (int) $s3_concurrency : A
 				<button type="button" class="ai1wm-button-gray" id="ai1wm-s3-refresh" aria-label="<?php esc_attr_e( 'Refresh', AI1WM_PLUGIN_NAME ); ?>">
 					<i class="ai1wm-icon-refresh"></i> <?php _e( 'Refresh', AI1WM_PLUGIN_NAME ); ?>
 				</button>
+				<input type="text" id="ai1wm-s3-prefix-input" placeholder="/<?php esc_attr_e( 'Filter prefix (e.g. backups/siteA)', AI1WM_PLUGIN_NAME ); ?>" style="margin-left:10px;min-width:240px;" />
+				<button type="button" class="ai1wm-button-gray" id="ai1wm-s3-go"><?php _e( 'Go', AI1WM_PLUGIN_NAME ); ?></button>
 			</div>
 		</div>
 

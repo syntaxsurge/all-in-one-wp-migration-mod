@@ -188,6 +188,13 @@ define( 'AI1WM_S3_STATUS_OPTION', 'ai1wm_s3_status' );
 // =======================
 define( 'AI1WM_S3_CRON_HOOK', 'ai1wm_s3_upload_job' );
 
+// =============================
+// = S3 Download (Background) =
+// =============================
+define( 'AI1WM_S3_DL_STATUS_OPTION', 'ai1wm_s3_download_status' );
+define( 'AI1WM_S3_DL_CRON_HOOK', 'ai1wm_s3_download_job' );
+define( 'AI1WM_S3_DOWNLOAD_CHUNK_SIZE', 10485760 ); // 10MB per chunk
+
 // =================================
 // = Archive Must-Use Plugins Name =
 // =================================
