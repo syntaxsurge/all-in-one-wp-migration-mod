@@ -195,7 +195,7 @@ $ai1wm_s3_concurrency     = isset( $s3_concurrency ) ? (int) $s3_concurrency : A
 			</table>
 		</div>
 
-		<!-- Toast / Snackbar -->
-		<div id="ai1wm-toast" class="ai1wm-toast" aria-live="polite" aria-atomic="true"></div>
+		<!-- Toasts / Snackbar Stack -->
+		<div id="ai1wm-toasts" class="ai1wm-toasts" aria-live="polite" aria-atomic="true"></div>
 	</div>
 </div>

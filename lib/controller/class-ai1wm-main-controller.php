@@ -825,11 +825,15 @@ class Ai1wm_Main_Controller {
 			. 'body .ai1wm-progress__bar{height:100%;background:#00aff0;width:0%;transition:width .3s ease;}'
 			. 'body .ai1wm-progress.ai1wm-progress--indeterminate .ai1wm-progress__bar{position:absolute;width:40%;animation:ai1wm-progress-ind 1.2s infinite;}'
 			. '@keyframes ai1wm-progress-ind{0%{left:-40%;}100%{left:100%;}}'
-			. 'body #ai1wm-toast{position:fixed;right:20px;bottom:20px;z-index:100003;display:none;min-width:240px;max-width:420px;background:#333;color:#fff;padding:12px 16px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.2)}'
-			. 'body #ai1wm-toast.ai1wm-toast--show{display:block}'
-			. 'body #ai1wm-toast.ai1wm-toast--success{background:#1a7f37}'
-			. 'body #ai1wm-toast.ai1wm-toast--error{background:#d63638}'
-			. 'body #ai1wm-toast.ai1wm-toast--info{background:#333}';
+			. 'body #ai1wm-toasts{position:fixed;right:20px;bottom:20px;z-index:100003;display:flex;flex-direction:column;gap:8px;align-items:flex-end;}'
+			. 'body .ai1wm-toast-item{min-width:240px;max-width:420px;background:#333;color:#fff;padding:12px 16px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.2);opacity:0;transform:translateY(10px);animation:ai1wm-toast-in .15s ease forwards}'
+			. 'body .ai1wm-toast-item.ai1wm-toast--success{background:#1a7f37}'
+			. 'body .ai1wm-toast-item.ai1wm-toast--error{background:#d63638}'
+			. 'body .ai1wm-toast-item.ai1wm-toast--info{background:#333}'
+			. '@keyframes ai1wm-toast-in{to{opacity:1;transform:translateY(0)}}'
+			. 'body .ai1wm-s3-prog-text{margin-top:4px;font-size:12px;color:#6d6d6d}'
+			. 'body .ai1wm-upload-progress{margin-top:6px}'
+			. 'body .ai1wm-upload-progress .ai1wm-upload-label{margin-top:4px;font-size:12px;color:#6d6d6d}';
 
 		wp_add_inline_style( 'ai1wm_backups', $custom_css );
 
@@ -920,6 +924,7 @@ class Ai1wm_Main_Controller {
 		wp_localize_script( 'ai1wm_backups_s3', 'ai1wm_s3', array(
 			'ajax'       => array(
 				'url' => wp_make_link_relative( admin_url( 'admin-ajax.php?action=ai1wm_s3_upload' ) ),
+				'upload_status_url' => wp_make_link_relative( admin_url( 'admin-ajax.php?action=ai1wm_s3_upload_status' ) ),
 			),
 			'secret_key' => get_option( AI1WM_SECRET_KEY ),
 			'configured' => Ai1wm_S3_Settings::is_configured(),
@@ -978,6 +983,8 @@ class Ai1wm_Main_Controller {
 				'refreshing'     => __( 'Refreshing backups...', AI1WM_PLUGIN_NAME ),
 				'active_downloads' => __( 'Active Downloads', AI1WM_PLUGIN_NAME ),
 				'col_progress'   => __( 'Progress', AI1WM_PLUGIN_NAME ),
+				'uploading_label'=> __( 'Uploading to S3…', AI1WM_PLUGIN_NAME ),
+				'queued_label'   => __( 'Queued…', AI1WM_PLUGIN_NAME ),
 				'col_backup'     => __( 'Backup', AI1WM_PLUGIN_NAME ),
 				'col_destination'=> __( 'Destination', AI1WM_PLUGIN_NAME ),
 				'col_status'     => __( 'Status', AI1WM_PLUGIN_NAME ),
@@ -1112,6 +1119,7 @@ class Ai1wm_Main_Controller {
 		add_action( 'wp_ajax_ai1wm_status', 'Ai1wm_Status_Controller::status' );
 		add_action( 'wp_ajax_ai1wm_backups', 'Ai1wm_Backups_Controller::delete' );
 		add_action( 'wp_ajax_ai1wm_s3_upload', 'Ai1wm_Backups_Controller::upload_to_s3' );
+		add_action( 'wp_ajax_ai1wm_s3_upload_status', 'Ai1wm_Backups_Controller::upload_status' );
 		add_action( 'wp_ajax_ai1wm_s3_list', 'Ai1wm_Backups_Controller::list_s3_objects' );
 		add_action( 'wp_ajax_ai1wm_s3_download', 'Ai1wm_Backups_Controller::download_from_s3' );
 		add_action( 'wp_ajax_ai1wm_s3_download_status', 'Ai1wm_Backups_Controller::download_status' );

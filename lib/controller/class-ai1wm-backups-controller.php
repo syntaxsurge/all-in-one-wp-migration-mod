@@ -162,6 +162,26 @@ class Ai1wm_Backups_Controller {
 	}
 
 	/**
+	 * AJAX: Get upload status for given archive.
+	 */
+	public static function upload_status() {
+		if ( ! current_user_can( 'import' ) ) {
+			wp_send_json_error( array( 'errors' => array( __( 'You are not allowed to perform this action.', AI1WM_PLUGIN_NAME ) ) ) );
+		}
+
+		$params  = stripslashes_deep( $_GET );
+		$archive = isset( $params['archive'] ) ? trim( (string) $params['archive'] ) : '';
+
+		if ( $archive === '' ) {
+			wp_send_json_error( array( 'errors' => array( __( 'Missing archive.', AI1WM_PLUGIN_NAME ) ) ) );
+		}
+
+		$status = Ai1wm_S3_Status::get( $archive );
+		$status['filename'] = basename( $archive );
+		wp_send_json_success( array( 'status' => $status ) );
+	}
+
+	/**
 	 * AJAX: List S3 objects/prefixes under configured bucket/prefix.
 	 */
 	public static function list_s3_objects() {
