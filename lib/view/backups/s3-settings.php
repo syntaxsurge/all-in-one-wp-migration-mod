@@ -177,5 +177,22 @@ $ai1wm_s3_concurrency     = isset( $s3_concurrency ) ? (int) $s3_concurrency : A
 		</div>
 
 		<p class="ai1wm-s3-browser-feedback" id="ai1wm-s3-feedback" aria-live="polite"></p>
+
+		<div class="ai1wm-backups-s3-downloads" id="ai1wm-s3-downloads">
+			<h3><?php _e( 'Active Downloads', AI1WM_PLUGIN_NAME ); ?></h3>
+			<table class="ai1wm-backups ai1wm-s3-downloads-table">
+				<thead>
+					<tr>
+						<th><?php _e( 'Backup', AI1WM_PLUGIN_NAME ); ?></th>
+						<th><?php _e( 'Progress', AI1WM_PLUGIN_NAME ); ?></th>
+						<th><?php _e( 'Status', AI1WM_PLUGIN_NAME ); ?></th>
+						<th><?php _e( 'Action', AI1WM_PLUGIN_NAME ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr class="ai1wm-s3-downloads-empty"><td colspan="4"><?php _e( 'No active downloads.', AI1WM_PLUGIN_NAME ); ?></td></tr>
+				</tbody>
+			</table>
+		</div>
 	</div>
 </div>
